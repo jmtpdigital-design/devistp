@@ -729,217 +729,29 @@ function renderAchats(){
   const tauxMarge=totalHT>0?((marge/totalHT)*100).toFixed(0):0;
 
   // Liste achats avec fournisseurs locaux
-  const fournisseurs={
-    'tout-venant': { nom:'Carrière de Pontcharra / Allevard', tel:'04 76 97 60 00', note:'Commander 48h avant, livraison possible' },
-    'grave':       { nom:'Carrière de Pontcharra / Allevard', tel:'04 76 97 60 00', note:'Prix variable selon tonnage, négocier' },
-    'gravier':     { nom:'Carrière de Pontcharra / Allevard', tel:'04 76 97 60 00', note:'Commander 48h avant' },
-    'concassé':    { nom:'Carrière de Pontcharra / Allevard', tel:'04 76 97 60 00', note:'Commander 48h avant' },
-    'sable':       { nom:'Point P Pontcharra', tel:'04 76 97 10 22', note:'Retrait possible le jour même' },
-    'béton':       { nom:'Béton Chantiers Isère — Crolles', tel:'04 76 08 08 08', note:'Commander la veille pour livraison' },
-    'beton':       { nom:'Béton Chantiers Isère — Crolles', tel:'04 76 08 08 08', note:'Commander la veille pour livraison' },
-    'tuyau':       { nom:'Point P Pontcharra', tel:'04 76 97 10 22', note:'Stock disponible' },
-    'drain':       { nom:'Point P Pontcharra', tel:'04 76 97 10 22', note:'Drains annelés dispo en stock' },
-    'géotextile':  { nom:'Point P Pontcharra', tel:'04 76 97 10 22', note:'Rouleaux 2m ou 4m de large' },
-    'geotextile':  { nom:'Point P Pontcharra', tel:'04 76 97 10 22', note:'Rouleaux 2m ou 4m de large' },
-    'bordure':     { nom:'Espace Matériaux Crolles', tel:'04 76 08 12 34', note:'Bordures T2 et CS2 en stock' },
-    'bordurette':  { nom:'Espace Matériaux Crolles', tel:'04 76 08 12 34', note:'Bordurettes béton en stock' },
-    'gabion':      { nom:'Point P Pontcharra', tel:'04 76 97 10 22', note:'Sur commande 3-5 jours' },
-    'remblai':     { nom:'Carrière de Pontcharra / Allevard', tel:'04 76 97 60 00', note:'Remblai tout-venant' },
-    'enrobé':      { nom:'Eurovia Isère — Crolles', tel:'04 76 08 50 00', note:'Sur commande, livraison camion' },
-    'enrobe':      { nom:'Eurovia Isère — Crolles', tel:'04 76 08 50 00', note:'Sur commande, livraison camion' },
-  };
+  // Construire la liste des fournisseurs basée sur les carrières proches DU CHANTIER
+  const fournisseurs = {};
+  
+  // Carrières proches du chantier (calculées lors de la saisie de la ville)
+  const carrieresList = carrieresProcheChantier.length > 0 
+    ? carrieresProcheChantier 
+    : CARRIERES_DB.map(c => ({ ...c, distChantier: distanceKm(BASE_LAT, BASE_LNG, c.lat, c.lng) }))
+        .sort((a,b) => a.distChantier - b.distChantier);
 
-  const lignesFournitures=fournitures.map(p=>{
-    const fournisseur=Object.entries(fournisseurs).find(([k])=>p.nom.toLowerCase().includes(k)||p.detail.toLowerCase().includes(k));
-    const f=fournisseur?fournisseur[1]:null;
-    const fBadge=f?('<div style="background:rgba(44,95,46,.12);border:1px solid rgba(90,158,93,.25);border-radius:8px;padding:10px;margin-top:8px">'
-      +'<div style="font-size:12px;font-weight:600;color:var(--gl);margin-bottom:4px">📍 '+f.nom+'</div>'
-      +'<div style="display:flex;justify-content:space-between;align-items:center">'
-      +'<a href="tel:'+f.tel+'" style="font-size:13px;color:var(--amber);text-decoration:none;font-weight:600">📞 '+f.tel+'</a>'
-      +'<span style="font-size:10px;color:var(--g4)">Appuyer pour appeler</span>'
-      +'</div>'
-      +'<div style="font-size:11px;color:var(--g4);margin-top:4px;font-style:italic">ℹ️ '+f.note+'</div>'
-      +'</div>'):'';
-    return '<div style="background:var(--gdp);border:1px solid rgba(255,255,255,.07);border-radius:var(--rs);padding:12px;margin-bottom:8px">'
-      +'<div style="display:flex;justify-content:space-between;margin-bottom:4px">'
-      +'<div style="flex:1"><b style="font-size:14px">'+p.nom+'</b>'
-      +'<div style="font-size:12px;color:var(--g4)">'+p.fourniture_detail+'</div></div>'
-      +'<div style="text-align:right">'
-      +'<div style="font-size:18px;font-weight:700;color:var(--amber)">'+Number(p.fourniture_cout).toFixed(0)+' €</div>'
-      +'<div style="font-size:11px;color:var(--g4)">fourniture HT</div>'
-      +'</div></div>'+fBadge+'</div>';
-  }).join('');
+  // Mapper chaque type de matériau à la carrière la plus proche qui le fournit
+  const typesMateriaux = ['tout-venant','grave','gravier','concasse','sable','beton','tuyau','drain','geotextile','bordure','bordurette','enrobe','remblai'];
+  typesMateriaux.forEach(type => {
+    const carriere = carrieresList.find(c => c.materiaux.some(m => m.includes(type) || type.includes(m.replace(/[^a-z]/g,''))));
+    if (carriere) {
+      fournisseurs[type] = {
+        nom: carriere.nom + ' (' + carriere.distChantier.toFixed(1) + 'km du chantier)',
+        tel: carriere.tel,
+        note: 'Distance chantier : ' + carriere.distChantier.toFixed(1) + 'km'
+      };
+    }
+  });
 
-  const lignesMO=d.postes?.filter(p=>!fournitures.includes(p)).map(p=>'<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:13px"><span style="color:var(--g4)">'+p.nom+'</span><span style="font-weight:600">'+Number(p.total).toFixed(0)+' €</span></div>').join('')||'';
-
-  // Construction HTML sans template literals multilignes
-  const htmlHeader='<div style="margin-bottom:12px">'
-    +'<div style="font-family:Barlow Condensed,sans-serif;font-size:13px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--gl);margin-bottom:4px">DEVIS : '+d._type+'</div>'
-    +'<div style="font-size:12px;color:var(--g4)">'+d._client+' — '+d._date+'</div>'
-    +'</div>';
-
-  const htmlMetrics='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px">'
-    +'<div class="cb"><div class="cv">'+Number(d.total_ttc).toFixed(0)+'€</div><div class="cl">Prix client TTC</div></div>'
-    +'<div class="cb" style="border-color:rgba(245,159,10,.3)"><div class="cv" style="color:var(--amber)">'+totalFournitures.toFixed(0)+'€</div><div class="cl">Fournitures HT</div></div>'
-    +'<div class="cb" style="border-color:rgba(90,158,93,.5)"><div class="cv">'+marge.toFixed(0)+'€</div><div class="cl">Marge brute HT</div></div>'
-    +'</div>';
-
-  const htmlFournitures='<div class="card">'
-    +'<div class="ct">Fournitures à commander</div>'
-    +(fournitures.length?lignesFournitures:'<div style="font-size:13px;color:var(--g4);text-align:center;padding:12px">Aucune fourniture détectée</div>')
-    +(fournitures.length?'<div style="display:flex;justify-content:space-between;padding:10px 0;margin-top:4px;border-top:1px solid rgba(255,255,255,.1);font-size:15px;font-weight:600"><span>Total fournitures</span><span style="color:var(--amber)">'+totalFournitures.toFixed(2)+' €</span></div>':'')
-    +'</div>';
-
-  const htmlMO='<div class="card">'
-    +'<div class="ct">Prestations (MO incluse)</div>'
-    +lignesMO
-    +'<div style="display:flex;justify-content:space-between;padding:10px 0;margin-top:4px;border-top:1px solid rgba(255,255,255,.1);font-size:15px;font-weight:600"><span>Total prestations</span><span style="color:var(--gl)">'+marge.toFixed(2)+' €</span></div>'
-    +'</div>';
-
-  const htmlRentabilite='<div style="background:rgba(44,95,46,.15);border:1px solid rgba(90,158,93,.3);border-radius:var(--r);padding:14px;margin-bottom:8px">'
-    +'<div style="font-family:Barlow Condensed,sans-serif;font-size:16px;font-weight:700;color:var(--gl);margin-bottom:8px">Rentabilité estimée</div>'
-    +'<div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0;color:var(--g4)"><span>CA facturé HT</span><span style="color:var(--w)">'+totalHT.toFixed(2)+' €</span></div>'
-    +'<div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0;color:var(--g4)"><span>Coût fournitures</span><span style="color:var(--amber)">- '+totalFournitures.toFixed(2)+' €</span></div>'
-    +'<div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0;color:var(--g4)"><span>Carburant estimé</span><span style="color:var(--amber)">- '+Math.round(d.duree_heures*3)+' €</span></div>'
-    +'<div style="border-top:1px solid rgba(255,255,255,.15);margin-top:6px;padding-top:8px;display:flex;justify-content:space-between;font-family:Barlow Condensed,sans-serif;font-size:18px;font-weight:700"><span>Marge nette estimée</span><span style="color:var(--gl)">'+(marge-Math.round(d.duree_heures*3)).toFixed(0)+' €</span></div>'
-    +'</div>';
-
-  c.innerHTML = htmlHeader + htmlMetrics + htmlFournitures + htmlMO + htmlRentabilite
-    + "<button class=\"btn bo\" onclick=\"ss('result')\" style=\"margin-top:0\">← Retour au devis</button>";
-}
-
-// ── BASE OPÉRATEUR (Haut Bréda) ──
-const BASE_LAT = 45.3833; // Haut Bréda / Allevard
-const BASE_LNG = 6.1167;
-const BASE_NOM = 'Haut Bréda (38580)';
-
-// ── CARRIÈRES CONNUES EN ISÈRE / SAVOIE ──
-const CARRIERES_DB = [
-  { nom:'Carrière de Pontcharra (Lafarge)',   lat:45.4270, lng:6.0220, tel:'04 76 97 60 00', materiaux:['tout-venant','grave 0/20','grave 0/31.5','concassé'] },
-  { nom:"Carriere Allevard",               lat:45.3917, lng:6.1333, tel:'04 76 97 50 00', materiaux:['tout-venant','remblai','grave 0/20'] },
-  { nom:'Carrière de Crolles (Cemex)',        lat:45.2850, lng:5.9950, tel:'04 76 08 15 00', materiaux:['grave 0/20','grave 0/31.5','sable','béton'] },
-  { nom:'Carrière de La Rochette',            lat:45.4500, lng:6.1000, tel:'04 79 25 51 00', materiaux:['tout-venant','grave 0/20','concassé'] },
-  { nom:'Carrière de Goncelin',              lat:45.3400, lng:6.0000, tel:'04 76 71 80 00', materiaux:['tout-venant','grave 0/31.5','remblai'] },
-  { nom:'Carrière de Chapareillan',          lat:45.3600, lng:5.9800, tel:'04 76 45 20 00', materiaux:['grave 0/20','sable','tout-venant'] },
-  { nom:'Point P Pontcharra',                lat:45.4220, lng:6.0200, tel:'04 76 97 10 22', materiaux:['tuyau','drain','géotextile','sable','ciment','bordurette'] },
-  { nom:'Espace Matériaux Crolles',          lat:45.2830, lng:5.9920, tel:'04 76 08 12 34', materiaux:['bordure','bordurette','parpaing','béton'] },
-  { nom:"Beton Chantiers Isere Crolles",     lat:45.2900, lng:5.9980, tel:"04 76 08 08 08", materiaux:["beton","sable"] },
-  { nom:"Eurovia Isere Grenoble",            lat:45.1900, lng:5.7200, tel:"04 76 50 10 00", materiaux:["enrobe","grave bitume"] },
-];
-
-function distanceKm(lat1, lng1, lat2, lng2) {
-  const R = 6371;
-  const dLat = (lat2-lat1) * Math.PI/180;
-  const dLng = (lng2-lng1) * Math.PI/180;
-  const a = Math.sin(dLat/2)*Math.sin(dLat/2) +
-    Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*
-    Math.sin(dLng/2)*Math.sin(dLng/2);
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-}
-
-// Distance depuis la base opérateur
-function distanceDepuisBase(lat, lng) {
-  return distanceKm(BASE_LAT, BASE_LNG, lat, lng);
-}
-
-// Calculer le coût de transfert selon la distance
-function coutTransfert(distKm) {
-  // Camion benne + mini pelle sur remorque : 1.5€/km aller-retour + 1h de chargement
-  const tarif = parseFloat(cfg.tarif) || 75;
-  const kmTotal = distKm * 2; // aller-retour
-  const coutKm = kmTotal * 1.5; // 1.5€/km
-  const coutMO = 1 * tarif; // 1h chargement/déchargement
-  return Math.round(coutKm + coutMO);
-}
-
-let chantierLat = null;
-let chantierLng = null;
-let carrieresProcheChantier = [];
-
-async function rechercherCarrieres() {
-  const ville = document.getElementById('vc').value;
-  if (!ville || ville.length < 3) {
-    document.getElementById('carrieres-card').style.display = 'none';
-    return;
-  }
-
-  // Géocoder la ville avec Nominatim (gratuit)
-  try {
-    const resp = await fetch(
-      'https://nominatim.openstreetmap.org/search?q=' + encodeURIComponent(ville + ', Isère, France') +
-      '&format=json&limit=1',
-      { headers: { 'Accept-Language': 'fr' } }
-    );
-    const data = await resp.json();
-    if (!data.length) return;
-
-    chantierLat = parseFloat(data[0].lat);
-    chantierLng = parseFloat(data[0].lon);
-
-    // Calculer distances depuis le chantier pour chaque carrière
-    const avecDistances = CARRIERES_DB.map(c => ({
-      ...c,
-      distChantier: distanceKm(chantierLat, chantierLng, c.lat, c.lng),
-      distBase: distanceKm(BASE_LAT, BASE_LNG, c.lat, c.lng)
-    })).sort((a,b) => a.distChantier - b.distChantier);
-
-    carrieresProcheChantier = avecDistances.slice(0, 5);
-
-    // Distance chantier depuis la base
-    const distChantier = distanceKm(BASE_LAT, BASE_LNG, chantierLat, chantierLng);
-    const cout = coutTransfert(distChantier);
-
-    // Afficher
-    const card = document.getElementById('carrieres-card');
-    card.style.display = 'block';
-
-    const liste = document.getElementById('carrieres-liste');
-    liste.innerHTML =
-      '<div style="background:rgba(245,159,10,.1);border:1px solid rgba(245,159,10,.3);border-radius:8px;padding:10px;margin-bottom:12px">'
-      +'<div style="font-size:12px;color:var(--amber);font-weight:600;margin-bottom:2px">📏 Distance chantier depuis votre base</div>'
-      +'<div style="font-size:20px;font-weight:700;color:var(--w)">' + distChantier.toFixed(1) + ' km</div>'
-      +'<div style="font-size:12px;color:var(--g4)">Coût transfert estimé : <b style="color:var(--amber)">' + cout + ' €</b> (aller-retour + 1h MO)</div>'
-      +'</div>'
-      + avecDistances.slice(0,4).map(c =>
-        '<div style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06)">'
-        +'<div style="display:flex;justify-content:space-between;align-items:center">'
-        +'<div style="font-size:13px;font-weight:600">'+c.nom+'</div>'
-        +'<div style="font-size:13px;font-weight:700;color:var(--gl)">'+c.distChantier.toFixed(1)+' km</div>'
-        +'</div>'
-        +'<div style="font-size:11px;color:var(--g4);margin-top:2px">'+c.materiaux.join(', ')+'</div>'
-        +'<a href="tel:'+c.tel+'" style="font-size:12px;color:var(--amber);text-decoration:none">📞 '+c.tel+'</a>'
-        +'</div>'
-      ).join('');
-
-  } catch(e) {
-    console.warn('Geocoding error:', e);
-  }
-}
-
-function loadCfg(){
-  if(cfg.nom)document.getElementById('sn').value=cfg.nom;
-  if(cfg.tel)document.getElementById('st').value=cfg.tel;
-  if(cfg.adresse)document.getElementById('sa').value=cfg.adresse;
-  if(cfg.siret)document.getElementById('ss').value=cfg.siret;
-  if(cfg.tarif)document.getElementById('sh').value=cfg.tarif;
-}
-
-function saveSt(){
-  cfg={nom:document.getElementById('sn').value,tel:document.getElementById('st').value,adresse:document.getElementById('sa').value,siret:document.getElementById('ss').value,tarif:document.getElementById('sh').value||'75'};
-  localStorage.setItem('cfg',JSON.stringify(cfg));showT('Paramètres enregistrés ✓');
-}
-
-async function clearAll(){
-  if(!confirm('Supprimer tous les devis ?'))return;
-  for(const d of hist){try{await fetch(PROXY+'/api/devis/'+d._id,{method:'DELETE'});}catch(e){}}
-  hist=[];updateHC();showT('Historique supprimé');
-}
-
-function updateHC(){document.getElementById('hc').textContent=hist.length+' devis';}
-function showL(m){document.getElementById('lo').classList.add('active');document.querySelector('.lt').textContent=m;}
-function setLS(s){document.getElementById('ls').textContent=s;}
-function hideL(){document.getElementById('lo').classList.remove('active');}
-function showT(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2800);}
-</script>
-</body>
-</html>
+  // Fournisseurs fixes pour matériaux non disponibles en carrière
+  if (!fournisseurs['tuyau']) fournisseurs['tuyau'] = { nom:'Point P Pontcharra', tel:'04 76 97 10 22', note:'Stock disponible' };
+  if (!fournisseurs['drain']) fournisseurs['drain'] = { nom:'Point P Pontcharra', tel:'04 76 97 10 22', note:'Drains anneles en stock' };
+  if (!fournisseurs['geotextile']) fournisseurs['geotextile'] = { nom:'Point P Pontcharra', tel:'04 76 97 10 22', note:'Rouleaux dispo' };
