@@ -322,12 +322,22 @@ nav button.active { color: var(--green-light); border-bottom-color: var(--green-
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
           Photo du terrain
         </div>
-        <div class="photo-zone" id="photoZone" onclick="document.getElementById('photoInput').click()">
+        <div class="photo-zone" id="photoZone">
           <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="rgba(90,158,93,0.6)" stroke-width="1.5" style="margin-bottom:8px"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
-          <div class="ph-label">Appuyez pour prendre une photo</div>
-          <div class="ph-hint">Ou choisir dans la galerie</div>
+          <div class="ph-label">Photo du terrain</div>
+          <div style="display:flex;gap:10px;margin-top:12px;justify-content:center">
+            <button onclick="document.getElementById('photoCamera').click()" style="background:var(--green);border:none;color:white;padding:10px 16px;border-radius:10px;font-family:Barlow,sans-serif;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+              Appareil photo
+            </button>
+            <button onclick="document.getElementById('photoGallery').click()" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:10px 16px;border-radius:10px;font-family:Barlow,sans-serif;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+              Galerie
+            </button>
+          </div>
         </div>
-        <input type="file" id="photoInput" accept="image/*" capture="environment" style="display:none" onchange="handlePhoto(event)">
+        <input type="file" id="photoCamera" accept="image/*" capture="environment" style="display:none" onchange="handlePhoto(event)">
+        <input type="file" id="photoGallery" accept="image/*" style="display:none" onchange="handlePhoto(event)">
       </div>
 
       <!-- Type de travaux -->
@@ -533,9 +543,35 @@ function handlePhoto(e) {
     photoBase64 = ev.target.result;
     const zone = document.getElementById('photoZone');
     zone.classList.add('has-photo');
-    zone.innerHTML = `<img src="${photoBase64}" alt="Photo chantier"><div class="photo-badge">📷 Photo chargée</div>`;
+    zone.innerHTML = `
+      <img src="${photoBase64}" alt="Photo chantier" style="width:100%;max-height:220px;object-fit:cover;border-radius:10px;display:block">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px">
+        <div class="photo-badge" style="position:relative;transform:none;bottom:auto;left:auto">📷 Photo chargée</div>
+        <button onclick="changerPhoto()" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.2);color:white;padding:5px 12px;border-radius:8px;font-size:12px;font-family:Barlow,sans-serif;cursor:pointer">
+          Changer
+        </button>
+      </div>`;
   };
   reader.readAsDataURL(file);
+}
+
+function changerPhoto() {
+  photoBase64 = null;
+  const zone = document.getElementById('photoZone');
+  zone.classList.remove('has-photo');
+  zone.innerHTML = `
+    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="rgba(90,158,93,0.6)" stroke-width="1.5" style="margin-bottom:8px"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+    <div class="ph-label">Photo du terrain</div>
+    <div style="display:flex;gap:10px;margin-top:12px;justify-content:center">
+      <button onclick="document.getElementById('photoCamera').click()" style="background:var(--green);border:none;color:white;padding:10px 16px;border-radius:10px;font-family:Barlow,sans-serif;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        Appareil photo
+      </button>
+      <button onclick="document.getElementById('photoGallery').click()" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:10px 16px;border-radius:10px;font-family:Barlow,sans-serif;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+        Galerie
+      </button>
+    </div>`;
 }
 
 // ── CALCUL AUTO ──
@@ -621,7 +657,8 @@ ${imageDesc ? '- Photo : ' + imageDesc : ''}
 Réponds UNIQUEMENT en JSON brut (pas de markdown) :
 {"analyse":"2 phrases","volume_m3":number,"duree_heures":number,"difficulte":"Facile|Modérée|Difficile","postes":[{"nom":"...","detail":"...","unite":"...","qte":number,"pu":number,"total":number}],"total_ht":number,"tva":number,"total_ttc":number,"conseils":["...","..."],"canva_prompt":"prompt en anglais pour Canva/Firefly pour simuler le rendu final de ce chantier après travaux"}
 
-Tarifs réalistes Isère 2025. TVA 20%.`;
+Tarifs réalistes Isère 2025. TVA 20%.
+IMPORTANT : Réponds UNIQUEMENT avec le JSON brut, sans texte avant, sans texte après, sans backticks, sans markdown.`;
 
   try {
     const r = await fetch('https://devistp-proxy.onrender.com/api/claude', {
@@ -634,10 +671,18 @@ Tarifs réalistes Isère 2025. TVA 20%.`;
       })
     });
     const d = await r.json();
+    console.log('Raw response:', JSON.stringify(d).substring(0, 300));
     let text = d.content?.map(i => i.text || '').join('') || '';
-    text = text.replace(/```json|```/g, '').trim();
-    const start = text.indexOf('{'), end = text.lastIndexOf('}');
-    const devis = JSON.parse(text.substring(start, end + 1));
+    console.log('Text extracted:', text.substring(0, 300));
+    // Nettoyer toutes les balises markdown possibles
+    text = text.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
+    // Trouver le JSON entre { et }
+    const start = text.indexOf('{');
+    const end = text.lastIndexOf('}');
+    if (start === -1 || end === -1) throw new Error('Pas de JSON dans la réponse: ' + text.substring(0, 100));
+    const jsonStr = text.substring(start, end + 1);
+    console.log('JSON to parse:', jsonStr.substring(0, 200));
+    const devis = JSON.parse(jsonStr);
     devis._date = new Date().toLocaleDateString('fr-FR');
     devis._type = data.type;
     devis._client = data.client;
@@ -660,7 +705,14 @@ Tarifs réalistes Isère 2025. TVA 20%.`;
     showScreen('result');
   } catch(e) {
     hideLoading();
-    showToast('Erreur : ' + e.message);
+    console.error('Devis error:', e);
+    document.getElementById('resultContent').innerHTML = `
+      <div style="background:rgba(220,38,38,0.1);border:1px solid rgba(220,38,38,0.3);border-radius:12px;padding:16px;margin:16px 0">
+        <div style="font-size:16px;font-weight:600;color:#f87171;margin-bottom:8px">❌ Erreur génération</div>
+        <div style="font-size:13px;color:var(--gray-400)">${e.message}</div>
+        <button class="btn btn-outline" style="margin-top:12px" onclick="showScreen('new')">← Réessayer</button>
+      </div>`;
+    showScreen('result');
   }
   btn.disabled = false;
 }
