@@ -567,191 +567,113 @@ async function creerMask(p){
   });
 }
 
-function dlRendu(){
-  if(!cur?._rendu)return;
-  const a=document.createElement('a');a.href=cur._rendu;a.download='rendu_chantier.jpg';a.click();
-}
-
-function exportPDF(){
-  if(!cur)return;
-  const d=cur;const{jsPDF}=window.jspdf;
-  const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
-  const W=210;
-  doc.setFillColor(44,95,46);doc.rect(0,0,W,28,'F');
-  doc.setTextColor(255,255,255);doc.setFontSize(20);doc.setFont('helvetica','bold');
-  doc.text('DEVIS ESTIMATIF',15,13);
-  doc.setFontSize(9);doc.setFont('helvetica','normal');
-  doc.text(d._type,15,20);
-  doc.text(d._date+"  |  Valable 30 jours",W-15,20,{align:'right'});
-  doc.setFillColor(240,247,240);doc.roundedRect(13,32,85,22,2,2,'F');
-  doc.setTextColor(44,95,46);doc.setFontSize(8);doc.setFont('helvetica','bold');doc.text('PRESTATAIRE',16,37);
-  doc.setTextColor(50,50,50);doc.setFont('helvetica','normal');
-  doc.text(cfg.nom||'Votre Entreprise',16,43);doc.text(cfg.adresse||'Haut Bréda — 38580',16,48);doc.text(cfg.tel||'06.XX.XX.XX.XX',16,53);
-  doc.setFillColor(240,247,240);doc.roundedRect(W/2+2,32,W/2-15,22,2,2,'F');
-  doc.setTextColor(44,95,46);doc.setFont('helvetica','bold');doc.setFontSize(8);doc.text('CLIENT',W/2+5,37);
-  doc.setTextColor(50,50,50);doc.setFont('helvetica','normal');doc.text(d._client,W/2+5,43);doc.text(d._ville,W/2+5,48);
-  doc.setFillColor(232,245,233);doc.roundedRect(13,57,W-26,14,2,2,'F');
-  doc.setTextColor(44,95,46);doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.text('ANALYSE',16,62);
-  doc.setTextColor(80,80,80);doc.setFont('helvetica','normal');
-  doc.text(doc.splitTextToSize(d.analyse,W-32).slice(0,2),16,67);
-  let y=76;
-  doc.setFillColor(44,95,46);doc.rect(13,y,W-26,8,'F');
-  doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(8);
-  doc.text('Désignation',16,y+5.5);doc.text('Qté',122,y+5.5,{align:'center'});doc.text('P.U. HT',150,y+5.5,{align:'right'});doc.text('Total HT',W-14,y+5.5,{align:'right'});
-  y+=8;
-  (d.postes||[]).forEach((p,i)=>{
-    if(i%2===0){doc.setFillColor(248,252,248);doc.rect(13,y,W-26,10,'F');}
-    doc.setTextColor(30,30,30);doc.setFont('helvetica','bold');doc.setFontSize(8);doc.text(p.nom.substring(0,42),16,y+4);
-    doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(100,100,100);doc.text(p.detail.substring(0,50),16,y+8.5);
-    doc.setTextColor(30,30,30);doc.setFontSize(8);doc.text(p.qte+" "+p.unite,122,y+6,{align:'center'});doc.text(Number(p.pu).toFixed(2)+' €',150,y+6,{align:'right'});
-    doc.setFont('helvetica','bold');doc.text(Number(p.total).toFixed(2)+" €",W-14,y+6,{align:'right'});y+=10;
-  });
-  y+=5;doc.setFillColor(240,247,240);doc.roundedRect(W/2+5,y,W/2-18,26,2,2,'F');
-  doc.setTextColor(100,100,100);doc.setFont('helvetica','normal');doc.setFontSize(9);
-  doc.text('Total HT',W/2+9,y+7);doc.text(Number(d.total_ht).toFixed(2)+" €",W-16,y+7,{align:'right'});
-  doc.text('TVA 20%',W/2+9,y+13);doc.text(Number(d.tva).toFixed(2)+" €",W-16,y+13,{align:'right'});
-  doc.setDrawColor(44,95,46);doc.setLineWidth(0.3);doc.line(W/2+9,y+16,W-16,y+16);
-  doc.setTextColor(44,95,46);doc.setFont('helvetica','bold');doc.setFontSize(12);
-  doc.text('TOTAL TTC',W/2+9,y+23);doc.text(Number(d.total_ttc).toFixed(2)+" €",W-16,y+23,{align:'right'});
-  doc.setFillColor(44,95,46);doc.rect(0,287,W,10,'F');
-  doc.setTextColor(255,255,255);doc.setFont('helvetica','normal');doc.setFontSize(7);
-  doc.text('Devis estimatif non contractuel — Valable 30 jours',W/2,293,{align:'center'});
-  doc.save('devis_'+d._type.replace(/\s/g,'_')+'_'+d._date.replace(/\//g,'-')+'.pdf');
-  showT('PDF téléchargé !');
-}
-
-async function partager(){
-  if(!cur)return;
-  const d=cur;
-  const t='📋 DEVIS ESTIMATIF\nType: '+d._type+'\nClient : '+d._client+' — '+d._ville+'\nDate : '+d._date+'\n\nTotal TTC : '+Number(d.total_ttc).toFixed(2)+' €\nVolume : '+d.volume_m3+' m³\n\nDevis valable 30 jours.';
-  if(navigator.share){try{await navigator.share({title:'DevisTP',text:t});}catch(e){}}
-  else{navigator.clipboard?.writeText(t);showT('Copié !');}
-}
-
-async function loadCloud(){
-  try{const r=await fetch(PROXY+'/api/devis');if(r.ok){hist=await r.json();updateHC();}}catch(e){}
-}
-
-async function renderHist(){
-  const c=document.getElementById('hcon');
-  c.innerHTML='<div style="text-align:center;padding:24px;color:var(--g4)"><div class="sp" style="margin:0 auto 8px"></div>Chargement...</div>';
-  await loadCloud();
-  if(!hist.length){c.innerHTML='<div class="es"><div class="ei">📋</div>Aucun devis.<br>Créez votre premier devis !</div>';return;}
-  c.innerHTML=hist.map(function(d,i){
-    return '<div class="hi">'
-      +'<div onclick="voirD('+i+')" style="flex:1;cursor:pointer">'
-      +'<div class="hty">'+d._type+'</div>'
-      +'<div class="hd">'+d._client+' &mdash; '+d._ville+' &mdash; '+d._date+'</div>'
-      +'</div>'
-      +'<div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:6px">'
-      +'<div class="htt">'+Number(d.total_ttc).toFixed(0)+' €</div>'
-      +'<button onclick="supD('+JSON.stringify(d._id)+',event)" style="background:var(--red);border:none;color:white;font-size:10px;padding:3px 8px;border-radius:6px;cursor:pointer">Suppr.</button>'
-      +'</div></div>';
-  }).join('');
-}
-
-function voirD(i){cur=hist[i];afficherDevis(cur);ss('result');}
-
-async function supD(id,e){
-  e.stopPropagation();if(!confirm('Supprimer ?'))return;
-  try{await fetch(PROXY+'/api/devis/'+id,{method:'DELETE'});}catch(e){}
-  hist=hist.filter(d=>String(d._id)!==String(id));updateHC();renderHist();showT('Supprimé');
-}
-
-function renderMO(){
-  const c=document.getElementById('mo-content');
+function renderAchats(){
+  const c=document.getElementById('achats-content');
   if(!cur){
     c.innerHTML='<div class="es">Generez un devis dabord.</div>';
     return;
   }
   const d=cur;
-  const tarif=parseFloat(cfg.tarif)||75;
-  const totalMO=(d.postes||[]).reduce(function(s,p){return s+Number(p.mo_cout||0);},0);
-  const totalH=(d.postes||[]).reduce(function(s,p){return s+Number(p.mo_heures||0);},0);
 
-  const lignes=(d.postes||[]).map(function(p){
-    const h=Number(p.mo_heures||0);
-    const cout=Number(p.mo_cout||0);
-    const pct=totalMO>0?((cout/totalMO)*100).toFixed(0):0;
-    return '<div style="background:var(--gdp);border:1px solid rgba(255,255,255,.07);border-radius:var(--rs);padding:12px;margin-bottom:8px">'
-      +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">'
-      +'<div style="flex:1"><b style="font-size:14px">'+p.nom+'</b>'
-      +'<div style="font-size:12px;color:var(--g4);margin-top:2px">'+p.detail+'</div></div>'
-      +'<div style="text-align:right">'
-      +'<div style="font-size:18px;font-weight:700;color:var(--gl)">'+cout.toFixed(0)+' €</div>'
-      +'<div style="font-size:11px;color:var(--g4)">'+h.toFixed(1)+'h x '+tarif+'€</div>'
-      +'</div></div>'
-      +'<div style="background:rgba(255,255,255,.06);border-radius:4px;height:6px;overflow:hidden">'
-      +'<div style="background:var(--gl);height:100%;width:'+pct+'%"></div>'
-      +'</div></div>';
-  }).join('');
-
-  c.innerHTML=''
-    +'<div style="margin-bottom:12px">'
-    +'<div style="font-family:Barlow Condensed,sans-serif;font-size:13px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--gl);margin-bottom:4px">MAIN OEUVRE</div>'
-    +'<div style="font-size:12px;color:var(--g4)">'+d._client+' — '+d._date+'</div>'
-    +'</div>'
-    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px">'
-    +'<div class="cb"><div class="cv">'+totalH.toFixed(1)+'h</div><div class="cl">Temps total</div></div>'
-    +'<div class="cb" style="border-color:rgba(90,158,93,.5)"><div class="cv">'+totalMO.toFixed(0)+'€</div><div class="cl">Total MO HT</div></div>'
-    +'</div>'
-    +'<div class="card"><div class="ct">Detail par poste</div>'+lignes+'</div>'
-    +'<div style="background:rgba(44,95,46,.1);border:1px solid rgba(90,158,93,.2);border-radius:var(--r);padding:12px;margin-bottom:8px">'
-    +'<div style="font-size:12px;color:var(--g4);margin-bottom:4px">Tarif applique</div>'
-    +'<div style="font-size:18px;font-weight:700;color:var(--gl)">'+tarif+' €/h</div>'
-    +'<div style="font-size:11px;color:var(--g4);margin-top:2px">Operateur + mini pelle 2T5 — modifiable dans Reglages</div>'
-    +'</div>'
-    +"<button class=\"btn bo\" style=\"margin-top:8px\" onclick=\"ss('result')\">← Retour devis</button>";
-}
-
-function renderAchats(){
-  const c=document.getElementById('achats-content');
-  if(!cur){
-    c.innerHTML='<div class="es"><div class="ei">🛒</div>Générez un devis pour voir<br>la liste des achats.</div>';
-    return;
-  }
-  const d=cur;
-
-  // Extraire les fournitures des postes
   const fournitures=[];
   let totalFournitures=0;
-  // Utiliser directement fourniture_cout du JSON
-  (d.postes||[]).forEach(p=>{
+
+  (d.postes||[]).forEach(function(p){
     if(p.fourniture_cout && Number(p.fourniture_cout) > 0){
       fournitures.push(p);
       totalFournitures+=Number(p.fourniture_cout);
     }
   });
 
-  // Calcul marge
   const totalHT=Number(d.total_ht);
   const marge=totalHT-totalFournitures;
-  const tauxMarge=totalHT>0?((marge/totalHT)*100).toFixed(0):0;
 
-  // Liste achats avec fournisseurs locaux
-  // Construire la liste des fournisseurs basée sur les carrières proches DU CHANTIER
-  const fournisseurs = {};
-  
-  // Carrières proches du chantier (calculées lors de la saisie de la ville)
-  const carrieresList = carrieresProcheChantier.length > 0 
-    ? carrieresProcheChantier 
-    : CARRIERES_DB.map(c => ({ ...c, distChantier: distanceKm(BASE_LAT, BASE_LNG, c.lat, c.lng) }))
-        .sort((a,b) => a.distChantier - b.distChantier);
+  const lignesFournitures=fournitures.map(function(p){
+    const nomLower=(p.nom+' '+p.detail).toLowerCase().replace(/[éèê]/g,'e').replace(/[àâ]/g,'a').replace(/[ôö]/g,'o').replace(/[ùû]/g,'u').replace(/[îï]/g,'i').replace(/[ç]/g,'c');
+    const fournisseur=Object.entries(fournisseurs).find(function(e){return nomLower.includes(e[0]);});
+    const f=fournisseur?fournisseur[1]:null;
+    const fBadge=f?('<div style="background:rgba(44,95,46,.12);border:1px solid rgba(90,158,93,.25);border-radius:8px;padding:10px;margin-top:8px">'
+      +'<div style="font-size:12px;font-weight:600;color:var(--gl);margin-bottom:4px">📍 '+f.nom+'</div>'
+      +'<div style="display:flex;justify-content:space-between;align-items:center">'
+      +'<a href="tel:'+f.tel+'" style="font-size:13px;color:var(--amber);text-decoration:none;font-weight:600">📞 '+f.tel+'</a>'
+      +'<span style="font-size:10px;color:var(--g4)">Appuyer pour appeler</span>'
+      +'</div>'
+      +'<div style="font-size:11px;color:var(--g4);margin-top:4px;font-style:italic">ℹ️ '+f.note+'</div>'
+      +'</div>'):'';
+    return '<div style="background:var(--gdp);border:1px solid rgba(255,255,255,.07);border-radius:var(--rs);padding:12px;margin-bottom:8px">'
+      +'<div style="display:flex;justify-content:space-between;margin-bottom:4px">'
+      +'<div style="flex:1"><b style="font-size:14px">'+p.nom+'</b>'
+      +'<div style="font-size:12px;color:var(--g4)">'+p.fourniture_detail+'</div></div>'
+      +'<div style="text-align:right">'
+      +'<div style="font-size:18px;font-weight:700;color:var(--amber)">'+Number(p.fourniture_cout).toFixed(0)+' €</div>'
+      +'<div style="font-size:11px;color:var(--g4)">fourniture HT</div>'
+      +'</div></div>'+fBadge+'</div>';
+  }).join('');
 
-  // Mapper chaque type de matériau à la carrière la plus proche qui le fournit
-  const typesMateriaux = ['tout-venant','grave','gravier','concasse','sable','beton','tuyau','drain','geotextile','bordure','bordurette','enrobe','remblai'];
-  typesMateriaux.forEach(type => {
-    const carriere = carrieresList.find(c => c.materiaux.some(m => m.includes(type) || type.includes(m.replace(/[^a-z]/g,''))));
-    if (carriere) {
-      fournisseurs[type] = {
-        nom: carriere.nom + ' (' + carriere.distChantier.toFixed(1) + 'km du chantier)',
-        tel: carriere.tel,
-        note: 'Distance chantier : ' + carriere.distChantier.toFixed(1) + 'km'
-      };
-    }
-  });
+  const lignesMO=(d.postes||[]).filter(function(p){return !fournitures.includes(p);}).map(function(p){
+    return '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:13px"><span style="color:var(--g4)">'+p.nom+'</span><span style="font-weight:600">'+Number(p.total).toFixed(0)+' €</span></div>';
+  }).join('')||'';
 
-  // Fournisseurs fixes pour matériaux non disponibles en carrière
-  if (!fournisseurs['tuyau']) fournisseurs['tuyau'] = { nom:'Point P Pontcharra', tel:'04 76 97 10 22', note:'Stock disponible' };
-  if (!fournisseurs['drain']) fournisseurs['drain'] = { nom:'Point P Pontcharra', tel:'04 76 97 10 22', note:'Drains anneles en stock' };
-  if (!fournisseurs['geotextile']) fournisseurs['geotextile'] = { nom:'Point P Pontcharra', tel:'04 76 97 10 22', note:'Rouleaux dispo' };
+  const htmlHeader='<div style="margin-bottom:12px">'
+    +'<div style="font-family:Barlow Condensed,sans-serif;font-size:13px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--gl);margin-bottom:4px">DEVIS : '+d._type+'</div>'
+    +'<div style="font-size:12px;color:var(--g4)">'+d._client+' — '+d._date+'</div>'
+    +'</div>';
+
+  const htmlMetrics='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px">'
+    +'<div class="cb"><div class="cv">'+Number(d.total_ttc).toFixed(0)+'€</div><div class="cl">Prix client TTC</div></div>'
+    +'<div class="cb" style="border-color:rgba(245,159,10,.3)"><div class="cv" style="color:var(--amber)">'+totalFournitures.toFixed(0)+'€</div><div class="cl">Fournitures HT</div></div>'
+    +'<div class="cb" style="border-color:rgba(90,158,93,.5)"><div class="cv">'+marge.toFixed(0)+'€</div><div class="cl">Marge brute HT</div></div>'
+    +'</div>';
+
+  const htmlFournitures='<div class="card">'
+    +'<div class="ct">Fournitures a commander</div>'
+    +(fournitures.length?lignesFournitures:'<div style="font-size:13px;color:var(--g4);text-align:center;padding:12px">Aucune fourniture</div>')
+    +(fournitures.length?'<div style="display:flex;justify-content:space-between;padding:10px 0;margin-top:4px;border-top:1px solid rgba(255,255,255,.1);font-size:15px;font-weight:600"><span>Total fournitures</span><span style="color:var(--amber)">'+totalFournitures.toFixed(0)+' €</span></div>':'')
+    +'</div>';
+
+  const htmlMO='<div class="card">'
+    +'<div class="ct">Prestations MO</div>'
+    +lignesMO
+    +'<div style="display:flex;justify-content:space-between;padding:10px 0;margin-top:4px;border-top:1px solid rgba(255,255,255,.1);font-size:15px;font-weight:600"><span>Total prestations</span><span style="color:var(--gl)">'+marge.toFixed(2)+' €</span></div>'
+    +'</div>';
+
+  const htmlRentabilite='<div style="background:rgba(44,95,46,.15);border:1px solid rgba(90,158,93,.3);border-radius:var(--r);padding:14px;margin-bottom:8px">'
+    +'<div style="font-family:Barlow Condensed,sans-serif;font-size:16px;font-weight:700;color:var(--gl);margin-bottom:8px">Rentabilite estimee</div>'
+    +'<div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0;color:var(--g4)"><span>CA facture HT</span><span style="color:var(--w)">'+totalHT.toFixed(2)+' €</span></div>'
+    +'<div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0;color:var(--g4)"><span>Cout fournitures</span><span style="color:var(--amber)">- '+totalFournitures.toFixed(2)+' €</span></div>'
+    +'<div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0;color:var(--g4)"><span>Carburant estime</span><span style="color:var(--amber)">- '+Math.round(Number(d.duree_heures||2)*3)+' €</span></div>'
+    +'<div style="border-top:1px solid rgba(255,255,255,.15);margin-top:6px;padding-top:8px;display:flex;justify-content:space-between;font-family:Barlow Condensed,sans-serif;font-size:18px;font-weight:700"><span>Marge nette estimee</span><span style="color:var(--gl)">'+(marge-Math.round(Number(d.duree_heures||2)*3)).toFixed(0)+' €</span></div>'
+    +'</div>';
+
+  c.innerHTML = htmlHeader + htmlMetrics + htmlFournitures + htmlMO + htmlRentabilite;
+  c.innerHTML += '<button class="btn bo" style="margin-top:8px" onclick="retourDevis()">← Retour devis</button>';
+
+function retourDevis(){ss('result');}
+function loadCfg(){
+  if(cfg.nom)document.getElementById('sn').value=cfg.nom;
+  if(cfg.tel)document.getElementById('st').value=cfg.tel;
+  if(cfg.adresse)document.getElementById('sa').value=cfg.adresse;
+  if(cfg.siret)document.getElementById('ss').value=cfg.siret;
+  if(cfg.tarif)document.getElementById('sh').value=cfg.tarif;
+}
+
+function saveSt(){
+  cfg={nom:document.getElementById('sn').value,tel:document.getElementById('st').value,adresse:document.getElementById('sa').value,siret:document.getElementById('ss').value,tarif:document.getElementById('sh').value||'75'};
+  localStorage.setItem('cfg',JSON.stringify(cfg));showT('Parametres enregistres !');
+}
+
+async function clearAll(){
+  if(!confirm('Supprimer tous les devis ?'))return;
+  for(const d of hist){try{await fetch(PROXY+'/api/devis/'+d._id,{method:'DELETE'});}catch(e){}}
+  hist=[];updateHC();showT('Historique supprime');
+}
+
+function updateHC(){document.getElementById('hc').textContent=hist.length+' devis';}
+function showL(m){document.getElementById('lo').classList.add('active');document.querySelector('.lt').textContent=m;}
+function setLS(s){document.getElementById('ls').textContent=s;}
+function hideL(){document.getElementById('lo').classList.remove('active');}
+function showT(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(function(){t.classList.remove('show');},2800);}
+}
+</script>
+</body>
+</html
