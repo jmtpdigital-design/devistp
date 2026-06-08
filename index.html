@@ -346,21 +346,29 @@ async function genererDevis(){
   }
 
   setLS('Calcul des postes...');
-  const prompt=`Tu es expert terrassier mini pelle 2T5, Grésivaudan Isère. Taux horaire : ${tarif}€/h.
-Chantier : type=${data.type}, sol=${data.sol}, surface=${data.surface}m², profondeur=${data.profondeur}m, acces=${data.acces}, evacuation=${data.evacuation}, description=${data.description||'standard'}${imgDesc?', photo='+imgDesc:''}
-Génère un devis réaliste. Réponds UNIQUEMENT avec du JSON brut sans backticks ni markdown :
-{"analyse":"2 phrases","volume_m3":number,"duree_heures":number,"difficulte":"Facile|Modérée|Difficile","postes":[{"nom":"...","detail":"...","unite":"...","qte":number,"pu":number,"total":number}],"total_ht":number,"tva":number,"total_ttc":number,"conseils":["..."],"flux_prompt":"english inpainting prompt for finished earthwork photo"}
-Tarifs réalistes Isère 2025. TVA 20%. JSON brut uniquement.`;
+  const prompt=`Devis terrassement mini pelle 2T5 Isère. Tarif ${tarif}€/h.
+Type:${data.type} Sol:${data.sol} Surface:${data.surface}m2 Prof:${data.profondeur}m Acces:${data.acces} Evac:${data.evacuation}
+${data.description?'Notes:'+data.description:''}${imgDesc?'Photo:'+imgDesc:''}
+JSON UNIQUEMENT (pas de texte, pas de backticks):
+{"analyse":"1 phrase","volume_m3":0,"duree_heures":0,"difficulte":"Facile","postes":[{"nom":"nom court","detail":"detail court","unite":"h","qte":1,"pu":75,"total":75}],"total_ht":0,"tva":0,"total_ttc":0,"conseils":["conseil1"],"flux_prompt":"gravel driveway finished"}
+Adapte les valeurs. Max 6 postes. Noms courts. TVA 20%.`;
 
   try{
     setLS('Génération IA...');
-    const r=await fetch(PROXY+'/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
+    const r=await fetch(PROXY+'/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:2000,system:'You are a JSON API. You ALWAYS respond with raw JSON only, no markdown, no backticks, no explanation. Only valid JSON starting with { and ending with }.',messages:[{role:'user',content:prompt}]})});
     const d=await r.json();
     let txt=d.content?.map(i=>i.text||'').join('')||'';
-    txt=txt.replace(/```json\s*/gi,'').replace(/```\s*/g,'').trim();
+    // Nettoyage robuste de toutes les balises markdown
+    txt=txt.replace(/```json/gi,'').replace(/```/g,'').trim();
+    // Extraire uniquement le JSON entre { et }
     const s=txt.indexOf('{'),e=txt.lastIndexOf('}');
-    if(s===-1||e===-1) throw new Error('Réponse invalide. Réessayez.');
-    const dv=JSON.parse(txt.substring(s,e+1));
+    if(s===-1||e===-1){
+      console.error('No JSON found in:', txt.substring(0,200));
+      throw new Error('Réponse IA invalide. Réessayez.');
+    }
+    const jsonStr=txt.substring(s,e+1);
+    console.log('Parsing JSON:', jsonStr.substring(0,100));
+    const dv=JSON.parse(jsonStr);
     dv._date=new Date().toLocaleDateString('fr-FR');
     dv._type=data.type;dv._client=data.client;dv._ville=data.ville;
     dv._photo=photo;dv._id=Date.now();
