@@ -6,349 +6,159 @@
 <meta name="theme-color" content="#2c5f2e">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="DevisTP">
 <title>DevisTP — Terrassement</title>
 <link rel="manifest" href="manifest.json">
-<link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
-:root {
-  --green-dark: #0f1a0f;
-  --green-deep: #1a2e1a;
-  --green: #2c5f2e;
-  --green-mid: #3d7a40;
-  --green-light: #5a9e5d;
-  --green-pale: #c8e6c9;
-  --green-ultra: #e8f5e9;
-  --amber: #f59f0a;
-  --amber-dark: #b45309;
-  --white: #ffffff;
-  --gray-100: #f3f4f6;
-  --gray-200: #e5e7eb;
-  --gray-400: #9ca3af;
-  --gray-600: #4b5563;
-  --gray-800: #1f2937;
-  --danger: #dc2626;
-  --radius: 12px;
-  --radius-sm: 8px;
-  --shadow: 0 4px 24px rgba(0,0,0,0.18);
-}
-
-* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-
-body {
-  font-family: 'Barlow', sans-serif;
-  background: var(--green-dark);
-  color: var(--white);
-  min-height: 100vh;
-  overflow-x: hidden;
-}
-
-/* ── SPLASH ── */
-#splash {
-  position: fixed; inset: 0; background: var(--green-dark);
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  z-index: 999; transition: opacity 0.5s;
-}
-#splash .logo { font-family: 'Barlow Condensed', sans-serif; font-size: 52px; font-weight: 700; color: var(--white); letter-spacing: -1px; }
-#splash .logo span { color: var(--green-light); }
-#splash .sub { font-size: 14px; color: var(--gray-400); margin-top: 6px; letter-spacing: 2px; text-transform: uppercase; }
-#splash .bar { width: 120px; height: 3px; background: var(--green-deep); border-radius: 2px; margin-top: 32px; overflow: hidden; }
-#splash .bar-fill { height: 100%; background: var(--green-light); border-radius: 2px; animation: load 1.2s ease forwards; }
-@keyframes load { from { width: 0 } to { width: 100% } }
-
-/* ── LAYOUT ── */
-#app { display: none; flex-direction: column; min-height: 100vh; }
-
-/* ── HEADER ── */
-header {
-  background: var(--green-deep);
-  padding: 14px 16px 12px;
-  border-bottom: 1px solid rgba(255,255,255,0.06);
-  display: flex; align-items: center; justify-content: space-between;
-  position: sticky; top: 0; z-index: 50;
-}
-header h1 { font-family: 'Barlow Condensed', sans-serif; font-size: 22px; font-weight: 700; letter-spacing: -0.5px; }
-header h1 span { color: var(--green-light); }
-.header-count { background: var(--green); color: var(--white); font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 20px; }
-
-/* ── NAV ── */
-nav {
-  display: flex; background: var(--green-deep);
-  border-bottom: 1px solid rgba(255,255,255,0.06);
-  position: sticky; top: 57px; z-index: 49;
-}
-nav button {
-  flex: 1; padding: 12px 4px 10px; background: none; border: none;
-  color: var(--gray-400); font-family: 'Barlow', sans-serif; font-size: 11px;
-  font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;
-  cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s;
-  display: flex; flex-direction: column; align-items: center; gap: 3px;
-}
-nav button svg { width: 20px; height: 20px; }
-nav button.active { color: var(--green-light); border-bottom-color: var(--green-light); }
-
-/* ── SCREENS ── */
-.screen { display: none; padding: 16px; animation: fadeIn 0.2s ease; }
-.screen.active { display: block; }
-@keyframes fadeIn { from { opacity: 0; transform: translateY(6px) } to { opacity: 1; transform: none } }
-
-/* ── CARDS ── */
-.card {
-  background: var(--green-deep);
-  border: 1px solid rgba(255,255,255,0.07);
-  border-radius: var(--radius);
-  padding: 16px;
-  margin-bottom: 12px;
-}
-.card-title {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-size: 13px; font-weight: 600; letter-spacing: 1px;
-  text-transform: uppercase; color: var(--green-light);
-  margin-bottom: 12px; display: flex; align-items: center; gap: 6px;
-}
-
-/* ── PHOTO UPLOAD ── */
-.photo-zone {
-  border: 2px dashed rgba(90,158,93,0.4);
-  border-radius: var(--radius);
-  padding: 28px 16px;
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.2s;
-  position: relative;
-  overflow: hidden;
-}
-.photo-zone:active { background: rgba(44,95,46,0.15); }
-.photo-zone.has-photo { border-style: solid; border-color: var(--green-light); padding: 0; }
-.photo-zone img { width: 100%; max-height: 220px; object-fit: cover; border-radius: 10px; display: block; }
-.photo-zone .ph-label { font-size: 14px; color: var(--gray-400); margin-top: 8px; }
-.photo-zone .ph-hint { font-size: 12px; color: rgba(255,255,255,0.3); margin-top: 4px; }
-.photo-badge {
-  position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);
-  background: rgba(15,26,15,0.85); color: var(--green-light);
-  font-size: 11px; font-weight: 600; padding: 4px 12px; border-radius: 20px;
-  backdrop-filter: blur(4px);
-}
-
-/* ── FORM ── */
-.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.form-group { margin-bottom: 10px; }
-.form-group label { display: block; font-size: 12px; color: var(--gray-400); margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px; }
-.form-group input, .form-group select, .form-group textarea {
-  width: 100%; background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.1);
-  border-radius: var(--radius-sm); padding: 10px 12px;
-  color: var(--white); font-family: 'Barlow', sans-serif; font-size: 15px;
-  -webkit-appearance: none; appearance: none;
-}
-.form-group select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; }
-.form-group select option { background: var(--green-deep); color: var(--white); }
-.form-group textarea { height: 80px; resize: none; }
-.form-group input:focus, .form-group select:focus, .form-group textarea:focus {
-  outline: none; border-color: var(--green-light);
-}
-
-/* ── CALC PREVIEW ── */
-.calc-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin: 10px 0; }
-.calc-box { background: rgba(44,95,46,0.2); border-radius: var(--radius-sm); padding: 10px; text-align: center; border: 1px solid rgba(90,158,93,0.2); }
-.calc-val { font-family: 'Barlow Condensed', sans-serif; font-size: 22px; font-weight: 700; color: var(--green-light); }
-.calc-lbl { font-size: 10px; color: var(--gray-400); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
-
-/* ── BUTTONS ── */
-.btn {
-  width: 100%; padding: 15px; border: none; border-radius: var(--radius);
-  font-family: 'Barlow Condensed', sans-serif; font-size: 17px; font-weight: 700;
-  letter-spacing: 0.5px; cursor: pointer; display: flex; align-items: center;
-  justify-content: center; gap: 8px; transition: all 0.15s;
-}
-.btn:active { transform: scale(0.97); }
-.btn-primary { background: var(--green); color: var(--white); }
-.btn-primary:disabled { opacity: 0.4; }
-.btn-amber { background: var(--amber); color: var(--gray-800); }
-.btn-outline { background: transparent; border: 1px solid rgba(255,255,255,0.2); color: var(--white); margin-top: 8px; }
-.btn-danger { background: var(--danger); color: var(--white); }
-.btn-sm { width: auto; padding: 8px 16px; font-size: 13px; }
-
-/* ── LOADING ── */
-.loading-overlay {
-  display: none; position: fixed; inset: 0;
-  background: rgba(15,26,15,0.92); z-index: 100;
-  flex-direction: column; align-items: center; justify-content: center;
-  backdrop-filter: blur(4px);
-}
-.loading-overlay.active { display: flex; }
-.spinner {
-  width: 48px; height: 48px;
-  border: 3px solid rgba(90,158,93,0.2);
-  border-top-color: var(--green-light);
-  border-radius: 50%; animation: spin 0.8s linear infinite;
-}
-@keyframes spin { to { transform: rotate(360deg) } }
-.loading-text { margin-top: 16px; font-size: 15px; color: var(--gray-400); }
-.loading-step { font-size: 13px; color: var(--green-light); margin-top: 4px; }
-
-/* ── DEVIS RESULT ── */
-.devis-result { animation: slideUp 0.3s ease; }
-@keyframes slideUp { from { opacity: 0; transform: translateY(20px) } to { opacity: 1; transform: none } }
-.devis-header-box {
-  background: linear-gradient(135deg, var(--green) 0%, var(--green-mid) 100%);
-  border-radius: var(--radius); padding: 16px; margin-bottom: 12px;
-}
-.devis-title { font-family: 'Barlow Condensed', sans-serif; font-size: 20px; font-weight: 700; }
-.devis-meta { font-size: 12px; color: rgba(255,255,255,0.7); margin-top: 4px; }
-.badges { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
-.badge { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px; }
-.badge-green { background: rgba(255,255,255,0.2); color: var(--white); }
-.badge-amber { background: var(--amber); color: var(--gray-800); }
-.badge-red { background: var(--danger); color: var(--white); }
-
-.metrics { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-bottom: 12px; }
-.metric { background: var(--green-deep); border: 1px solid rgba(255,255,255,0.07); border-radius: var(--radius-sm); padding: 12px 8px; text-align: center; }
-.metric-val { font-family: 'Barlow Condensed', sans-serif; font-size: 24px; font-weight: 700; color: var(--green-light); }
-.metric-lbl { font-size: 10px; color: var(--gray-400); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
-
-.postes { margin-bottom: 12px; }
-.poste-row {
-  display: flex; justify-content: space-between; align-items: flex-start;
-  padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06);
-  gap: 8px;
-}
-.poste-row:last-child { border-bottom: none; }
-.poste-nom { font-size: 14px; font-weight: 500; }
-.poste-detail { font-size: 11px; color: var(--gray-400); margin-top: 2px; }
-.poste-prix { text-align: right; white-space: nowrap; }
-.poste-qte { font-size: 11px; color: var(--gray-400); }
-.poste-total { font-size: 15px; font-weight: 600; color: var(--green-light); }
-
-.totaux { background: rgba(44,95,46,0.15); border: 1px solid rgba(90,158,93,0.3); border-radius: var(--radius); padding: 14px; }
-.tot-row { display: flex; justify-content: space-between; font-size: 14px; padding: 4px 0; color: var(--gray-400); }
-.tot-final { display: flex; justify-content: space-between; font-family: 'Barlow Condensed', sans-serif; font-size: 22px; font-weight: 700; color: var(--white); padding-top: 10px; margin-top: 6px; border-top: 1px solid rgba(255,255,255,0.15); }
-
-.conseils { margin-top: 12px; }
-.conseil-item { display: flex; gap: 8px; padding: 6px 0; font-size: 13px; color: var(--gray-400); }
-.conseil-item::before { content: '→'; color: var(--green-light); flex-shrink: 0; }
-
-.canva-box {
-  background: rgba(245,159,10,0.1); border: 1px solid rgba(245,159,10,0.3);
-  border-radius: var(--radius); padding: 14px; margin-top: 12px;
-}
-.canva-title { font-family: 'Barlow Condensed', sans-serif; font-size: 16px; font-weight: 700; color: var(--amber); margin-bottom: 6px; }
-.canva-desc { font-size: 13px; color: var(--gray-400); margin-bottom: 10px; line-height: 1.5; }
-.canva-steps { font-size: 12px; color: var(--gray-400); line-height: 1.8; margin-bottom: 10px; }
-.canva-steps span { color: var(--amber); font-weight: 600; }
-
-/* ── HISTORY ── */
-.hist-item {
-  background: var(--green-deep); border: 1px solid rgba(255,255,255,0.07);
-  border-radius: var(--radius); padding: 14px; margin-bottom: 10px;
-  cursor: pointer; transition: border-color 0.15s;
-  display: flex; justify-content: space-between; align-items: center;
-}
-.hist-item:active { border-color: var(--green-light); }
-.hist-type { font-family: 'Barlow Condensed', sans-serif; font-size: 17px; font-weight: 700; }
-.hist-date { font-size: 12px; color: var(--gray-400); margin-top: 2px; }
-.hist-ttc { font-family: 'Barlow Condensed', sans-serif; font-size: 22px; font-weight: 700; color: var(--green-light); }
-.hist-actions { display: flex; gap: 8px; margin-top: 10px; }
-.empty-state { text-align: center; padding: 48px 16px; color: var(--gray-400); }
-.empty-icon { font-size: 48px; margin-bottom: 12px; opacity: 0.4; }
-.empty-text { font-size: 15px; }
-
-/* ── TOAST ── */
-.toast {
-  position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px);
-  background: var(--green); color: var(--white); padding: 10px 20px;
-  border-radius: 24px; font-size: 14px; font-weight: 500;
-  opacity: 0; transition: all 0.3s; z-index: 200; white-space: nowrap;
-}
-.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-
-/* ── BOTTOM NAV ── */
-.bottom-nav {
-  position: fixed; bottom: 0; left: 0; right: 0;
-  background: var(--green-deep); border-top: 1px solid rgba(255,255,255,0.08);
-  display: flex; padding-bottom: env(safe-area-inset-bottom);
-  z-index: 50;
-}
-.bottom-nav button {
-  flex: 1; padding: 10px 4px 8px; background: none; border: none;
-  color: var(--gray-400); font-family: 'Barlow', sans-serif; font-size: 10px;
-  font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;
-  cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 3px;
-  transition: color 0.15s;
-}
-.bottom-nav button svg { width: 22px; height: 22px; }
-.bottom-nav button.active { color: var(--green-light); }
-
-.content-wrap { padding-bottom: 80px; }
+:root{--gd:#0f1a0f;--gdp:#1a2e1a;--g:#2c5f2e;--gm:#3d7a40;--gl:#5a9e5d;--amber:#f59f0a;--w:#fff;--g4:#9ca3af;--g8:#1f2937;--red:#dc2626;--r:12px;--rs:8px}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:'Barlow',sans-serif;background:var(--gd);color:var(--w);min-height:100vh;overflow-x:hidden}
+#splash{position:fixed;inset:0;background:var(--gd);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;transition:opacity .5s}
+.logo{font-family:'Barlow Condensed',sans-serif;font-size:52px;font-weight:700;letter-spacing:-1px}
+.logo span{color:var(--gl)}
+.sub{font-size:14px;color:var(--g4);margin-top:6px;letter-spacing:2px;text-transform:uppercase}
+.bar{width:120px;height:3px;background:var(--gdp);border-radius:2px;margin-top:32px;overflow:hidden}
+.bf{height:100%;background:var(--gl);border-radius:2px;animation:ld 1.2s ease forwards}
+@keyframes ld{from{width:0}to{width:100%}}
+#app{display:none;flex-direction:column;min-height:100vh}
+header{background:var(--gdp);padding:14px 16px 12px;border-bottom:1px solid rgba(255,255,255,.06);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+header h1{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700}
+header h1 span{color:var(--gl)}
+.hc{background:var(--g);color:var(--w);font-size:12px;font-weight:600;padding:3px 10px;border-radius:20px}
+.cw{padding-bottom:80px}
+.sc{display:none;padding:16px;animation:fi .2s ease}
+.sc.active{display:block}
+@keyframes fi{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.card{background:var(--gdp);border:1px solid rgba(255,255,255,.07);border-radius:var(--r);padding:16px;margin-bottom:12px}
+.ct{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--gl);margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.pz{border:2px dashed rgba(90,158,93,.4);border-radius:var(--r);padding:24px 16px;text-align:center}
+.pz.hp{border-style:solid;border-color:var(--gl);padding:0;overflow:hidden}
+.pz img{width:100%;max-height:220px;object-fit:cover;display:block}
+.pa{display:flex;justify-content:space-between;align-items:center;padding:8px 10px}
+.pbs{display:flex;gap:10px;justify-content:center;margin-top:12px}
+.pb{border:none;color:var(--w);padding:10px 16px;border-radius:10px;font-family:'Barlow',sans-serif;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px}
+.pbc{background:var(--g)}
+.pbg{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2)!important}
+.pch{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.2);color:var(--w);padding:5px 12px;border-radius:8px;font-size:12px;font-family:'Barlow',sans-serif;cursor:pointer}
+.pl{font-size:14px;color:var(--g4);margin-bottom:4px}
+.pbdg{background:rgba(44,95,46,.9);color:var(--gl);font-size:11px;font-weight:600;padding:4px 12px;border-radius:20px}
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fg2{margin-bottom:10px}
+.fg2 label{display:block;font-size:12px;color:var(--g4);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px}
+.fg2 input,.fg2 select,.fg2 textarea{width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:var(--rs);padding:10px 12px;color:var(--w);font-family:'Barlow',sans-serif;font-size:15px;-webkit-appearance:none}
+.fg2 select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px}
+.fg2 select option{background:var(--gdp)}
+.fg2 textarea{height:80px;resize:none}
+.fg2 input:focus,.fg2 select:focus,.fg2 textarea:focus{outline:none;border-color:var(--gl)}
+.cr{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0}
+.cb{background:rgba(44,95,46,.2);border-radius:var(--rs);padding:10px;text-align:center;border:1px solid rgba(90,158,93,.2)}
+.cv{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;color:var(--gl)}
+.cl{font-size:10px;color:var(--g4);text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
+.btn{width:100%;padding:15px;border:none;border-radius:var(--r);font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:700;letter-spacing:.5px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .15s;margin-bottom:8px}
+.btn:active{transform:scale(.97)}
+.bp{background:var(--g);color:var(--w)}
+.bp:disabled{opacity:.4}
+.ba{background:var(--amber);color:var(--g8)}
+.bo{background:transparent;border:1px solid rgba(255,255,255,.2);color:var(--w)}
+.bd{background:var(--red);color:var(--w)}
+.bsm{width:auto;padding:8px 16px;font-size:13px;margin-bottom:0}
+.lo{display:none;position:fixed;inset:0;background:rgba(15,26,15,.92);z-index:100;flex-direction:column;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.lo.active{display:flex}
+.sp{width:48px;height:48px;border:3px solid rgba(90,158,93,.2);border-top-color:var(--gl);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.lt{margin-top:16px;font-size:15px;color:var(--g4)}
+.ls{font-size:13px;color:var(--gl);margin-top:4px}
+.dhb{background:linear-gradient(135deg,var(--g) 0%,var(--gm) 100%);border-radius:var(--r);padding:16px;margin-bottom:12px}
+.dt{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700}
+.dm{font-size:12px;color:rgba(255,255,255,.7);margin-top:4px}
+.bgs{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.bg{font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px}
+.bgg{background:rgba(255,255,255,.2);color:var(--w)}
+.bga{background:var(--amber);color:var(--g8)}
+.bgr{background:var(--red);color:var(--w)}
+.ms{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.mt{background:var(--gdp);border:1px solid rgba(255,255,255,.07);border-radius:var(--rs);padding:12px 8px;text-align:center}
+.mv{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:700;color:var(--gl)}
+.ml{font-size:10px;color:var(--g4);text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
+.pr{display:flex;justify-content:space-between;align-items:flex-start;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06);gap:8px}
+.pr:last-child{border-bottom:none}
+.pn{font-size:14px;font-weight:500}
+.pd{font-size:11px;color:var(--g4);margin-top:2px}
+.pt{font-size:15px;font-weight:600;color:var(--gl)}
+.pq{font-size:11px;color:var(--g4)}
+.tx{background:rgba(44,95,46,.15);border:1px solid rgba(90,158,93,.3);border-radius:var(--r);padding:14px}
+.tr{display:flex;justify-content:space-between;font-size:14px;padding:4px 0;color:var(--g4)}
+.tf{display:flex;justify-content:space-between;font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;color:var(--w);padding-top:10px;margin-top:6px;border-top:1px solid rgba(255,255,255,.15)}
+.ci{display:flex;gap:8px;padding:6px 0;font-size:13px;color:var(--g4)}
+.ci::before{content:'→';color:var(--gl);flex-shrink:0}
+.rb{background:rgba(245,159,10,.08);border:1px solid rgba(245,159,10,.25);border-radius:var(--r);padding:14px;margin-bottom:8px}
+.rtl{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;color:var(--amber);margin-bottom:6px}
+.rdc{font-size:13px;color:var(--g4);margin-bottom:12px;line-height:1.5}
+.hi{background:var(--gdp);border:1px solid rgba(255,255,255,.07);border-radius:var(--r);padding:14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
+.hty{font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:700}
+.hd{font-size:12px;color:var(--g4);margin-top:2px}
+.htt{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;color:var(--gl)}
+.es{text-align:center;padding:48px 16px;color:var(--g4)}
+.ei{font-size:48px;margin-bottom:12px;opacity:.4}
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--g);color:var(--w);padding:10px 20px;border-radius:24px;font-size:14px;font-weight:500;opacity:0;transition:all .3s;z-index:200;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.bn{position:fixed;bottom:0;left:0;right:0;background:var(--gdp);border-top:1px solid rgba(255,255,255,.08);display:flex;padding-bottom:env(safe-area-inset-bottom);z-index:50}
+.bn button{flex:1;padding:10px 4px 8px;background:none;border:none;color:var(--g4);font-family:'Barlow',sans-serif;font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;transition:color .15s}
+.bn button svg{width:22px;height:22px}
+.bn button.active{color:var(--gl)}
 </style>
 </head>
 <body>
-
-<!-- SPLASH -->
 <div id="splash">
   <div class="logo">Devis<span>TP</span></div>
   <div class="sub">Terrassement · VRD · Isère</div>
-  <div class="bar"><div class="bar-fill"></div></div>
+  <div class="bar"><div class="bf"></div></div>
 </div>
-
-<!-- LOADING -->
-<div class="loading-overlay" id="loadingOverlay">
-  <div class="spinner"></div>
-  <div class="loading-text">Génération en cours...</div>
-  <div class="loading-step" id="loadingStep">Analyse du chantier</div>
+<div class="lo" id="lo">
+  <div class="sp"></div>
+  <div class="lt">Génération en cours...</div>
+  <div class="ls" id="ls">Analyse du chantier</div>
 </div>
-
-<!-- TOAST -->
 <div class="toast" id="toast"></div>
-
-<!-- APP -->
 <div id="app">
   <header>
     <h1>Devis<span>TP</span></h1>
-    <div class="header-count" id="headerCount">0 devis</div>
+    <div class="hc" id="hc">0 devis</div>
   </header>
+  <div class="cw">
 
-  <div class="content-wrap">
-
-    <!-- ── ÉCRAN NOUVEAU DEVIS ── -->
-    <div class="screen active" id="screen-new">
-
-      <!-- Photo -->
+    <!-- NOUVEAU DEVIS -->
+    <div class="sc active" id="sc-new">
       <div class="card">
-        <div class="card-title">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+        <div class="ct">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
           Photo du terrain
         </div>
-        <div class="photo-zone" id="photoZone">
-          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="rgba(90,158,93,0.6)" stroke-width="1.5" style="margin-bottom:8px"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
-          <div class="ph-label">Photo du terrain</div>
-          <div style="display:flex;gap:10px;margin-top:12px;justify-content:center">
-            <button onclick="document.getElementById('photoCamera').click()" style="background:var(--green);border:none;color:white;padding:10px 16px;border-radius:10px;font-family:Barlow,sans-serif;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        <div class="pz" id="pz">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="rgba(90,158,93,0.5)" stroke-width="1.5" style="margin-bottom:8px"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          <div class="pl">Photo du terrain</div>
+          <div class="pbs">
+            <button class="pb pbc" onclick="document.getElementById('ic').click()">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
               Appareil photo
             </button>
-            <button onclick="document.getElementById('photoGallery').click()" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:10px 16px;border-radius:10px;font-family:Barlow,sans-serif;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+            <button class="pb pbg" onclick="document.getElementById('ig').click()">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
               Galerie
             </button>
           </div>
         </div>
-        <input type="file" id="photoCamera" accept="image/*" capture="environment" style="display:none" onchange="handlePhoto(event)">
-        <input type="file" id="photoGallery" accept="image/*" style="display:none" onchange="handlePhoto(event)">
+        <input type="file" id="ic" accept="image/*" capture="environment" style="display:none" onchange="handlePhoto(event)">
+        <input type="file" id="ig" accept="image/*" style="display:none" onchange="handlePhoto(event)">
       </div>
 
-      <!-- Type de travaux -->
       <div class="card">
-        <div class="card-title">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
-          Chantier
-        </div>
-        <div class="form-group">
+        <div class="ct">Chantier</div>
+        <div class="fg2">
           <label>Type de travaux</label>
-          <select id="typeTraux">
+          <select id="tt">
             <option value="création d'accès garage">Accès garage / entrée</option>
             <option value="terrassement général">Terrassement général</option>
             <option value="création de mare">Création de mare</option>
@@ -359,757 +169,375 @@ nav button.active { color: var(--green-light); border-bottom-color: var(--green-
             <option value="plateforme parking">Plateforme / parking</option>
           </select>
         </div>
-        <div class="form-grid">
-          <div class="form-group">
-            <label>Surface (m²)</label>
-            <input type="number" id="surface" inputmode="numeric" placeholder="ex: 90" oninput="updateCalc()">
-          </div>
-          <div class="form-group">
-            <label>Profondeur (m)</label>
-            <input type="number" id="profondeur" inputmode="decimal" placeholder="ex: 0.20" step="0.05" oninput="updateCalc()">
-          </div>
-          <div class="form-group">
-            <label>Type de sol</label>
-            <select id="typeSol">
+        <div class="fg">
+          <div class="fg2"><label>Surface (m²)</label><input type="number" id="su" inputmode="numeric" placeholder="ex: 90" oninput="uc()"></div>
+          <div class="fg2"><label>Profondeur (m)</label><input type="number" id="pr" inputmode="decimal" placeholder="ex: 0.20" step="0.05" oninput="uc()"></div>
+          <div class="fg2"><label>Type de sol</label>
+            <select id="ts">
               <option value="terre végétale">Terre végétale</option>
               <option value="argile limon">Argile / limon</option>
-              <option value="mixte gravats">Mixte / gravats</option>
+              <option value="mixte gravats" selected>Mixte / gravats</option>
               <option value="grave sable">Grave / sable</option>
               <option value="rocheux">Rocheux / dur</option>
             </select>
           </div>
-          <div class="form-group">
-            <label>Accès engin</label>
-            <select id="acces">
+          <div class="fg2"><label>Accès engin</label>
+            <select id="ac">
               <option value="facile +3m">Facile (+3m)</option>
               <option value="moyen 2-3m">Moyen (2-3m)</option>
               <option value="difficile -2m">Difficile (-2m)</option>
             </select>
           </div>
         </div>
-        <div class="form-group">
-          <label>Évacuation terres</label>
-          <select id="evacuation">
+        <div class="fg2"><label>Évacuation terres</label>
+          <select id="ev">
             <option value="régalage sur place">Régalage sur place</option>
             <option value="déplacement sur site camion benne" selected>Déplacement sur site (camion benne)</option>
             <option value="évacuation en décharge">Évacuation décharge</option>
             <option value="à charge du client">À charge client</option>
           </select>
         </div>
-
-        <!-- Calcul auto volume -->
-        <div class="calc-row" id="calcRow" style="display:none">
-          <div class="calc-box"><div class="calc-val" id="calcSurf">—</div><div class="calc-lbl">Surface m²</div></div>
-          <div class="calc-box"><div class="calc-val" id="calcVol">—</div><div class="calc-lbl">Volume m³</div></div>
-          <div class="calc-box"><div class="calc-val" id="calcFois">—</div><div class="calc-lbl">Foisonné m³</div></div>
+        <div class="cr" id="cr" style="display:none">
+          <div class="cb"><div class="cv" id="csv">—</div><div class="cl">Surface m²</div></div>
+          <div class="cb"><div class="cv" id="cvol">—</div><div class="cl">Volume m³</div></div>
+          <div class="cb"><div class="cv" id="cfoi">—</div><div class="cl">Foisonné m³</div></div>
         </div>
       </div>
 
-      <!-- Description -->
       <div class="card">
-        <div class="card-title">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-          Informations complémentaires
-        </div>
-        <div class="form-group">
-          <label>Description / contraintes</label>
-          <textarea id="description" placeholder="Ex: seuil garage à respecter, mur à proximité, matériaux déjà livrés sur site..."></textarea>
-        </div>
-        <div class="form-grid">
-          <div class="form-group">
-            <label>Nom client</label>
-            <input type="text" id="nomClient" placeholder="M. Dupont">
-          </div>
-          <div class="form-group">
-            <label>Ville</label>
-            <input type="text" id="villeClient" placeholder="Crolles">
-          </div>
+        <div class="ct">Informations</div>
+        <div class="fg2"><label>Description / contraintes</label><textarea id="de" placeholder="Seuil garage à respecter, matériaux déjà livrés..."></textarea></div>
+        <div class="fg">
+          <div class="fg2"><label>Nom client</label><input type="text" id="nc" placeholder="M. Dupont"></div>
+          <div class="fg2"><label>Ville</label><input type="text" id="vc" placeholder="Crolles"></div>
         </div>
       </div>
 
-      <button class="btn btn-primary" id="btnGenerer" onclick="genererDevis()">
+      <button class="btn bp" id="bg" onclick="genererDevis()">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
         Générer le devis estimatif
       </button>
     </div>
 
-    <!-- ── ÉCRAN RÉSULTAT ── -->
-    <div class="screen" id="screen-result">
-      <div id="resultContent"></div>
-    </div>
+    <!-- RÉSULTAT -->
+    <div class="sc" id="sc-result"><div id="rc"></div></div>
 
-    <!-- ── ÉCRAN HISTORIQUE ── -->
-    <div class="screen" id="screen-history">
-      <div id="historyContent"></div>
-    </div>
+    <!-- HISTORIQUE -->
+    <div class="sc" id="sc-history"><div id="hcon"></div></div>
 
-    <!-- ── ÉCRAN PARAMÈTRES ── -->
-    <div class="screen" id="screen-settings">
+    <!-- PARAMÈTRES -->
+    <div class="sc" id="sc-settings">
       <div class="card">
-        <div class="card-title">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
-          Mon entreprise
-        </div>
-        <div class="form-group"><label>Nom / Raison sociale</label><input type="text" id="setNom" placeholder="Ex: Terrassement Dupont"></div>
-        <div class="form-group"><label>Téléphone</label><input type="tel" id="setTel" placeholder="06 XX XX XX XX"></div>
-        <div class="form-group"><label>Adresse</label><input type="text" id="setAdresse" placeholder="Haut Bréda, 38580"></div>
-        <div class="form-group"><label>SIRET</label><input type="text" id="setSiret" placeholder="XXX XXX XXX XXXXX"></div>
-        <div class="form-group"><label>Taux horaire (€/h)</label><input type="number" id="setTarif" placeholder="75" value="75"></div>
-        <button class="btn btn-primary" onclick="saveSettings()">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-          Enregistrer
-        </button>
+        <div class="ct">Mon entreprise</div>
+        <div class="fg2"><label>Nom / Raison sociale</label><input type="text" id="sn" placeholder="Terrassement Dupont"></div>
+        <div class="fg2"><label>Téléphone</label><input type="tel" id="st" placeholder="06 XX XX XX XX"></div>
+        <div class="fg2"><label>Adresse</label><input type="text" id="sa" placeholder="Haut Bréda, 38580"></div>
+        <div class="fg2"><label>SIRET</label><input type="text" id="ss" placeholder="XXX XXX XXX XXXXX"></div>
+        <div class="fg2"><label>Taux horaire (€/h)</label><input type="number" id="sh" placeholder="75" value="75"></div>
+        <button class="btn bp" onclick="saveSt()">Enregistrer</button>
       </div>
-
       <div class="card">
-        <div class="card-title">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
-          Données
-        </div>
-        <p style="font-size:13px;color:var(--gray-400);margin-bottom:12px">Supprimer tous les devis enregistrés.</p>
-        <button class="btn btn-danger btn-sm" onclick="clearAll()">Tout supprimer</button>
+        <div class="ct">Données</div>
+        <p style="font-size:13px;color:var(--g4);margin-bottom:12px">Supprimer tous les devis.</p>
+        <button class="btn bd bsm" onclick="clearAll()">Tout supprimer</button>
       </div>
     </div>
+  </div>
 
-  </div><!-- content-wrap -->
-
-  <!-- BOTTOM NAV -->
-  <div class="bottom-nav">
-    <button class="active" id="nav-new" onclick="showScreen('new')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-      Nouveau
+  <div class="bn">
+    <button class="active" id="n-new" onclick="ss('new')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>Nouveau
     </button>
-    <button id="nav-result" onclick="showScreen('result')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-      Devis
+    <button id="n-result" onclick="ss('result')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Devis
     </button>
-    <button id="nav-history" onclick="showScreen('history')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22C6.48 22 2 17.52 2 12S6.48 2 12 2s10 4.48 10 10-4.48 10-10 10z"/><path d="M12 6v6l4 2"/></svg>
-      Historique
+    <button id="n-history" onclick="ss('history')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>Historique
     </button>
-    <button id="nav-settings" onclick="showScreen('settings')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
-      Réglages
+    <button id="n-settings" onclick="ss('settings')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>Réglages
     </button>
   </div>
 </div>
 
 <script>
-// ── STATE ──
-let photoBase64 = null;
-let currentDevis = null;
-let devisHistory = [];
-let settings = JSON.parse(localStorage.getItem('settings') || '{}');
-const PROXY = 'https://devistp-proxy.onrender.com';
+const PROXY='https://devistp-proxy.onrender.com';
+let photo=null,cur=null,hist=[],cfg=JSON.parse(localStorage.getItem('cfg')||'{}');
 
-// ── INIT ──
-window.addEventListener('load', () => {
-  setTimeout(() => {
-    document.getElementById('splash').style.opacity = '0';
-    setTimeout(() => {
-      document.getElementById('splash').style.display = 'none';
-      document.getElementById('app').style.display = 'flex';
-      document.getElementById('app').style.flexDirection = 'column';
-      loadSettings();
-      updateHeaderCount();
-      // Charger devis depuis le cloud
-      fetch(PROXY + '/api/devis').then(r => r.json()).then(data => {
-        devisHistory = data;
-        updateHeaderCount();
-      }).catch(() => {});
-    }, 500);
-  }, 1400);
+window.addEventListener('load',()=>{
+  setTimeout(()=>{
+    document.getElementById('splash').style.opacity='0';
+    setTimeout(()=>{
+      document.getElementById('splash').style.display='none';
+      const a=document.getElementById('app');
+      a.style.display='flex';a.style.flexDirection='column';
+      loadCfg();loadCloud();
+    },500);
+  },1400);
 });
+if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
 
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./sw.js').catch(()=>{});
+function ss(n){
+  document.querySelectorAll('.sc').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.bn button').forEach(b=>b.classList.remove('active'));
+  document.getElementById('sc-'+n).classList.add('active');
+  document.getElementById('n-'+n).classList.add('active');
+  if(n==='history') renderHist();
 }
 
-// ── NAVIGATION ──
-function showScreen(name) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.querySelectorAll('.bottom-nav button').forEach(b => b.classList.remove('active'));
-  document.getElementById('screen-' + name).classList.add('active');
-  document.getElementById('nav-' + name).classList.add('active');
-  if (name === 'history') renderHistory();
-}
-
-// ── PHOTO ──
-function handlePhoto(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = ev => {
-    photoBase64 = ev.target.result;
-    const zone = document.getElementById('photoZone');
-    zone.classList.add('has-photo');
-    zone.innerHTML = `
-      <img src="${photoBase64}" alt="Photo chantier" style="width:100%;max-height:220px;object-fit:cover;border-radius:10px;display:block">
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px">
-        <div class="photo-badge" style="position:relative;transform:none;bottom:auto;left:auto">📷 Photo chargée</div>
-        <button onclick="changerPhoto()" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.2);color:white;padding:5px 12px;border-radius:8px;font-size:12px;font-family:Barlow,sans-serif;cursor:pointer">
-          Changer
-        </button>
-      </div>`;
+function handlePhoto(e){
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=ev=>{
+    photo=ev.target.result;
+    const z=document.getElementById('pz');
+    z.classList.add('hp');
+    z.innerHTML=`<img src="${photo}" alt="Terrain"><div class="pa"><span class="pbdg">📷 Photo chargée</span><button class="pch" onclick="resetPhoto()">Changer</button></div>`;
   };
-  reader.readAsDataURL(file);
+  r.readAsDataURL(f);
 }
 
-function changerPhoto() {
-  photoBase64 = null;
-  const zone = document.getElementById('photoZone');
-  zone.classList.remove('has-photo');
-  zone.innerHTML = `
-    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="rgba(90,158,93,0.6)" stroke-width="1.5" style="margin-bottom:8px"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
-    <div class="ph-label">Photo du terrain</div>
-    <div style="display:flex;gap:10px;margin-top:12px;justify-content:center">
-      <button onclick="document.getElementById('photoCamera').click()" style="background:var(--green);border:none;color:white;padding:10px 16px;border-radius:10px;font-family:Barlow,sans-serif;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
-        Appareil photo
-      </button>
-      <button onclick="document.getElementById('photoGallery').click()" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:10px 16px;border-radius:10px;font-family:Barlow,sans-serif;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
-        Galerie
-      </button>
-    </div>`;
+function resetPhoto(){
+  photo=null;
+  ['ic','ig'].forEach(id=>document.getElementById(id).value='');
+  const z=document.getElementById('pz');
+  z.classList.remove('hp');
+  z.innerHTML=`<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="rgba(90,158,93,0.5)" stroke-width="1.5" style="margin-bottom:8px"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg><div class="pl">Photo du terrain</div><div class="pbs"><button class="pb pbc" onclick="document.getElementById('ic').click()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>Appareil photo</button><button class="pb pbg" onclick="document.getElementById('ig').click()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>Galerie</button></div>`;
 }
 
-// ── CALCUL AUTO ──
-function updateCalc() {
-  const s = parseFloat(document.getElementById('surface').value) || 0;
-  const p = parseFloat(document.getElementById('profondeur').value) || 0;
-  const row = document.getElementById('calcRow');
-  if (s > 0) {
-    const vol = (s * p).toFixed(1);
-    const fois = (s * p * 1.3).toFixed(1);
-    document.getElementById('calcSurf').textContent = s;
-    document.getElementById('calcVol').textContent = vol;
-    document.getElementById('calcFois').textContent = fois;
-    row.style.display = 'grid';
-  } else {
-    row.style.display = 'none';
-  }
+function uc(){
+  const s=parseFloat(document.getElementById('su').value)||0;
+  const p=parseFloat(document.getElementById('pr').value)||0;
+  const row=document.getElementById('cr');
+  if(s>0){
+    document.getElementById('csv').textContent=s;
+    document.getElementById('cvol').textContent=(s*p).toFixed(1);
+    document.getElementById('cfoi').textContent=(s*p*1.3).toFixed(1);
+    row.style.display='grid';
+  } else row.style.display='none';
 }
 
-// ── GÉNÉRATION DEVIS ──
-async function genererDevis() {
-  const tarif = parseFloat(settings.tarif) || 75;
-  const btn = document.getElementById('btnGenerer');
-  btn.disabled = true;
+async function genererDevis(){
+  const btn=document.getElementById('bg');
+  btn.disabled=true;
+  const tarif=parseFloat(cfg.tarif)||75;
+  showL('Analyse du chantier...');
 
-  showLoading('Analyse du chantier...');
-
-  const data = {
-    type: document.getElementById('typeTraux').value,
-    sol: document.getElementById('typeSol').value,
-    surface: document.getElementById('surface').value || '90',
-    profondeur: document.getElementById('profondeur').value || '0.20',
-    acces: document.getElementById('acces').value,
-    evacuation: document.getElementById('evacuation').value,
-    description: document.getElementById('description').value,
-    client: document.getElementById('nomClient').value || 'Client',
-    ville: document.getElementById('villeClient').value || 'Grésivaudan',
+  const data={
+    type:document.getElementById('tt').value,
+    sol:document.getElementById('ts').value,
+    surface:document.getElementById('su').value||'90',
+    profondeur:document.getElementById('pr').value||'0.20',
+    acces:document.getElementById('ac').value,
+    evacuation:document.getElementById('ev').value,
+    description:document.getElementById('de').value,
+    client:document.getElementById('nc').value||'Client',
+    ville:document.getElementById('vc').value||'Grésivaudan',
     tarif
   };
 
-  setLoadingStep('Calcul des quantités...');
-  await delay(400);
-  setLoadingStep('Estimation des postes...');
-
-  let imageDesc = '';
-  if (photoBase64) {
-    setLoadingStep('Analyse de la photo...');
-    try {
-      const r = await fetch('https://devistp-proxy.onrender.com/api/claude', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'claude-haiku-4-5-20251001',
-          max_tokens: 300,
-          messages: [{
-            role: 'user',
-            content: [
-              { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: photoBase64.split(',')[1] }},
-              { type: 'text', text: 'Analyse ce terrain pour un devis de terrassement. Décris en 2-3 phrases : type de sol visible, état du terrain, accès, contraintes particulières, surface approximative visible.' }
-            ]
-          }]
-        })
-      });
-      const d = await r.json();
-      imageDesc = d.content?.[0]?.text || '';
-    } catch(e) { imageDesc = ''; }
+  let imgDesc='';
+  if(photo){
+    setLS('Analyse de la photo...');
+    try{
+      const r=await fetch(PROXY+'/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:300,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:'image/jpeg',data:photo.split(',')[1]}},{type:'text',text:'Analyse ce terrain pour terrassement en 2 phrases courtes : sol, état, accès, contraintes.'}]}]})});
+      const d=await r.json();imgDesc=d.content?.[0]?.text||'';
+    }catch(e){imgDesc='';}
   }
 
-  setLoadingStep('Génération du devis IA...');
+  setLS('Calcul des postes...');
+  const prompt=`Tu es expert terrassier mini pelle 2T5, Grésivaudan Isère. Taux horaire : ${tarif}€/h.
+Chantier : type=${data.type}, sol=${data.sol}, surface=${data.surface}m², profondeur=${data.profondeur}m, acces=${data.acces}, evacuation=${data.evacuation}, description=${data.description||'standard'}${imgDesc?', photo='+imgDesc:''}
+Génère un devis réaliste. Réponds UNIQUEMENT avec du JSON brut sans backticks ni markdown :
+{"analyse":"2 phrases","volume_m3":number,"duree_heures":number,"difficulte":"Facile|Modérée|Difficile","postes":[{"nom":"...","detail":"...","unite":"...","qte":number,"pu":number,"total":number}],"total_ht":number,"tva":number,"total_ttc":number,"conseils":["..."],"flux_prompt":"english inpainting prompt for finished earthwork photo"}
+Tarifs réalistes Isère 2025. TVA 20%. JSON brut uniquement.`;
 
-  const prompt = `Tu es expert terrassier mini pelle 2T5, Grésivaudan Isère. Taux horaire : ${tarif}€/h.
-
-Chantier :
-- Type : ${data.type}
-- Sol : ${data.sol}
-- Surface : ${data.surface} m²
-- Profondeur décaissage : ${data.profondeur} m
-- Accès : ${data.acces}
-- Évacuation terres : ${data.evacuation}
-- Description : ${data.description || 'standard'}
-${imageDesc ? '- Photo : ' + imageDesc : ''}
-
-Réponds UNIQUEMENT en JSON brut (pas de markdown) :
-{"analyse":"2 phrases","volume_m3":number,"duree_heures":number,"difficulte":"Facile|Modérée|Difficile","postes":[{"nom":"...","detail":"...","unite":"...","qte":number,"pu":number,"total":number}],"total_ht":number,"tva":number,"total_ttc":number,"conseils":["...","..."],"canva_prompt":"prompt en anglais pour Canva/Firefly pour simuler le rendu final de ce chantier après travaux"}
-
-Tarifs réalistes Isère 2025. TVA 20%.
-IMPORTANT : Réponds UNIQUEMENT avec le JSON brut, sans texte avant, sans texte après, sans backticks, sans markdown.`;
-
-  try {
-    const r = await fetch('https://devistp-proxy.onrender.com/api/claude', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 1000,
-        messages: [{ role: 'user', content: prompt }]
-      })
-    });
-    const d = await r.json();
-    console.log('Raw response:', JSON.stringify(d).substring(0, 300));
-    let text = d.content?.map(i => i.text || '').join('') || '';
-    console.log('Text extracted:', text.substring(0, 300));
-    // Nettoyer toutes les balises markdown possibles
-    text = text.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
-    // Trouver le JSON entre { et }
-    const start = text.indexOf('{');
-    const end = text.lastIndexOf('}');
-    if (start === -1 || end === -1) throw new Error('Pas de JSON dans la réponse: ' + text.substring(0, 100));
-    const jsonStr = text.substring(start, end + 1);
-    console.log('JSON to parse:', jsonStr.substring(0, 200));
-    const devis = JSON.parse(jsonStr);
-    devis._date = new Date().toLocaleDateString('fr-FR');
-    devis._type = data.type;
-    devis._client = data.client;
-    devis._ville = data.ville;
-    devis._photo = photoBase64;
-    devis._id = Date.now();
-
-    currentDevis = devis;
-    devisHistory.unshift(devis);
-    updateHeaderCount();
-    // Sauvegarder dans le cloud
-    fetch(PROXY + '/api/devis/save', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(devis)
-    }).then(() => console.log('Devis saved to cloud')).catch(e => console.warn('Save error:', e));
-
-    hideLoading();
-    afficherDevis(devis);
-    showScreen('result');
-  } catch(e) {
-    hideLoading();
-    console.error('Devis error:', e);
-    document.getElementById('resultContent').innerHTML = `
-      <div style="background:rgba(220,38,38,0.1);border:1px solid rgba(220,38,38,0.3);border-radius:12px;padding:16px;margin:16px 0">
-        <div style="font-size:16px;font-weight:600;color:#f87171;margin-bottom:8px">❌ Erreur génération</div>
-        <div style="font-size:13px;color:var(--gray-400)">${e.message}</div>
-        <button class="btn btn-outline" style="margin-top:12px" onclick="showScreen('new')">← Réessayer</button>
-      </div>`;
-    showScreen('result');
+  try{
+    setLS('Génération IA...');
+    const r=await fetch(PROXY+'/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
+    const d=await r.json();
+    let txt=d.content?.map(i=>i.text||'').join('')||'';
+    txt=txt.replace(/```json\s*/gi,'').replace(/```\s*/g,'').trim();
+    const s=txt.indexOf('{'),e=txt.lastIndexOf('}');
+    if(s===-1||e===-1) throw new Error('Réponse invalide. Réessayez.');
+    const dv=JSON.parse(txt.substring(s,e+1));
+    dv._date=new Date().toLocaleDateString('fr-FR');
+    dv._type=data.type;dv._client=data.client;dv._ville=data.ville;
+    dv._photo=photo;dv._id=Date.now();
+    cur=dv;hist.unshift(dv);updateHC();
+    fetch(PROXY+'/api/devis/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(dv)}).catch(()=>{});
+    hideL();afficherDevis(dv);ss('result');
+  }catch(e){
+    hideL();
+    document.getElementById('rc').innerHTML=`<div style="background:rgba(220,38,38,.1);border:1px solid rgba(220,38,38,.3);border-radius:12px;padding:16px;margin:16px 0"><div style="font-size:16px;font-weight:600;color:#f87171;margin-bottom:8px">❌ Erreur</div><div style="font-size:13px;color:var(--g4)">${e.message}</div><button class="btn bo" style="margin-top:12px" onclick="ss('new')">← Réessayer</button></div>`;
+    ss('result');
   }
-  btn.disabled = false;
+  btn.disabled=false;
 }
 
-// ── AFFICHAGE DEVIS ──
-function afficherDevis(d) {
-  const diffBadge = d.difficulte === 'Facile' ? 'badge-green' : d.difficulte === 'Difficile' ? 'badge-red' : 'badge-amber';
-  const postesHtml = (d.postes || []).map(p => `
-    <div class="poste-row">
-      <div style="flex:1">
-        <div class="poste-nom">${p.nom}</div>
-        <div class="poste-detail">${p.detail}</div>
-      </div>
-      <div class="poste-prix">
-        <div class="poste-qte">${p.qte} ${p.unite} × ${p.pu}€</div>
-        <div class="poste-total">${Number(p.total).toFixed(2)} €</div>
-      </div>
-    </div>`).join('');
-
-  const conseilsHtml = (d.conseils || []).map(c => `<div class="conseil-item">${c}</div>`).join('');
-  const canvaPrompt = d.canva_prompt || 'compacted gravel driveway, flat surface after earthworks';
-  const canvaUrl = `https://www.canva.com/design/new`;
-
-  document.getElementById('resultContent').innerHTML = `
-    <div class="devis-result">
-      <div class="devis-header-box">
-        <div class="devis-title">${d._type}</div>
-        <div class="devis-meta">${d._client} — ${d._ville} — ${d._date}</div>
-        <div class="badges">
-          <span class="badge badge-green">30 jours</span>
-          <span class="badge ${diffBadge}">${d.difficulte}</span>
-        </div>
-      </div>
-
-      ${d._photo ? `<div style="margin-bottom:12px;border-radius:12px;overflow:hidden"><img src="${d._photo}" style="width:100%;max-height:180px;object-fit:cover;display:block"></div>` : ''}
-
-      <p style="font-size:13px;color:var(--gray-400);margin-bottom:12px;line-height:1.6">${d.analyse}</p>
-
-      <div class="metrics">
-        <div class="metric"><div class="metric-val">${d.volume_m3}</div><div class="metric-lbl">m³</div></div>
-        <div class="metric"><div class="metric-val">${d.duree_heures}h</div><div class="metric-lbl">Durée</div></div>
-        <div class="metric"><div class="metric-val">${Number(d.total_ttc).toFixed(0)}€</div><div class="metric-lbl">TTC</div></div>
-      </div>
-
-      <div class="card">
-        <div class="card-title">Détail des postes</div>
-        <div class="postes">${postesHtml}</div>
-        <div class="totaux">
-          <div class="tot-row"><span>Total HT</span><span>${Number(d.total_ht).toFixed(2)} €</span></div>
-          <div class="tot-row"><span>TVA 20%</span><span>${Number(d.tva).toFixed(2)} €</span></div>
-          <div class="tot-final"><span>Total TTC</span><span>${Number(d.total_ttc).toFixed(2)} €</span></div>
-        </div>
-      </div>
-
-      ${conseilsHtml ? `<div class="card"><div class="card-title">Conseils</div>${conseilsHtml}</div>` : ''}
-
-      <div class="canva-box">
-        <div class="canva-title">🎨 Créer le rendu visuel</div>
-        <div class="canva-desc">Utilisez Canva ou Adobe Firefly pour simuler le rendu après travaux. Le prompt IA est prêt :</div>
-        <div style="background:rgba(0,0,0,0.3);border-radius:8px;padding:10px;margin-bottom:10px">
-          <div style="font-size:11px;color:var(--amber);margin-bottom:4px">PROMPT À COPIER :</div>
-          <div style="font-size:12px;color:var(--white);line-height:1.5" id="canvaPromptText">${canvaPrompt}</div>
-        </div>
-        <button class="btn btn-outline btn-sm" onclick="copyPrompt('${canvaPrompt.replace(/'/g,"\\'")}')">📋 Copier le prompt</button>
-        <a href="${canvaUrl}" target="_blank" style="text-decoration:none">
-          <button class="btn btn-amber" style="margin-top:8px">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-            Ouvrir Canva
-          </button>
-        </a>
-      </div>
-
-      <button class="btn btn-primary" onclick="exportPDF()" style="margin-top:12px">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        Télécharger PDF
-      </button>
-      <button class="btn btn-outline" onclick="partagerDevis()">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-        Partager
-      </button>
-      <button class="btn btn-outline" onclick="showScreen('new')" style="margin-top:0">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-        Nouveau devis
-      </button>
-    </div>`;
+function afficherDevis(d){
+  const db=d.difficulte==='Facile'?'bgg':d.difficulte==='Difficile'?'bgr':'bga';
+  const ph=d.postes?.map(p=>`<div class="pr"><div style="flex:1"><div class="pn">${p.nom}</div><div class="pd">${p.detail}</div></div><div style="text-align:right;min-width:100px"><div class="pq">${p.qte} ${p.unite} × ${p.pu}€</div><div class="pt">${Number(p.total).toFixed(2)} €</div></div></div>`).join('')||'';
+  const ch=d.conseils?.map(c=>`<div class="ci">${c}</div>`).join('')||'';
+  document.getElementById('rc').innerHTML=`
+    <div class="dhb"><div class="dt">${d._type}</div><div class="dm">${d._client} — ${d._ville} — ${d._date}</div><div class="bgs"><span class="bg bgg">Valable 30 jours</span><span class="bg ${db}">${d.difficulte}</span></div></div>
+    ${d._photo?`<div style="margin-bottom:12px;border-radius:12px;overflow:hidden"><img src="${d._photo}" style="width:100%;max-height:180px;object-fit:cover;display:block"></div>`:''}
+    <p style="font-size:13px;color:var(--g4);margin-bottom:12px;line-height:1.6">${d.analyse}</p>
+    <div class="ms"><div class="mt"><div class="mv">${d.volume_m3}</div><div class="ml">m³</div></div><div class="mt"><div class="mv">${d.duree_heures}h</div><div class="ml">Durée</div></div><div class="mt"><div class="mv">${Number(d.total_ttc).toFixed(0)}€</div><div class="ml">TTC</div></div></div>
+    <div class="card"><div class="ct">Détail des postes</div>${ph}<div class="tx" style="margin-top:12px"><div class="tr"><span>Total HT</span><span>${Number(d.total_ht).toFixed(2)} €</span></div><div class="tr"><span>TVA 20%</span><span>${Number(d.tva).toFixed(2)} €</span></div><div class="tf"><span>Total TTC</span><span>${Number(d.total_ttc).toFixed(2)} €</span></div></div></div>
+    ${ch?`<div class="card"><div class="ct">Conseils</div>${ch}</div>`:''}
+    ${d._photo?`<div class="rb"><div class="rtl">🎨 Simulation rendu — Flux IA</div><div class="rdc">Flux IA remplace le sol sur votre photo avec la surface après travaux.</div><div id="rp" style="display:none;text-align:center;padding:16px"><div class="sp" style="margin:0 auto 8px"></div><div style="font-size:13px;color:var(--g4)">Génération en cours... (20-30 sec)</div></div><div id="rr" style="display:none;margin-bottom:12px"><div style="font-size:11px;color:var(--gl);margin-bottom:8px">✅ Rendu généré</div><img id="ri" style="width:100%;border-radius:10px;display:block"><button class="btn bo bsm" style="margin-top:8px" onclick="dlRendu()">📥 Télécharger</button></div><button class="btn ba" id="btnr" onclick="genRendu()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 12l3 3 5-5"/></svg>Générer le rendu IA</button></div>`:''}
+    <button class="btn bp" onclick="exportPDF()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Télécharger PDF</button>
+    <button class="btn bo" onclick="partager()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>Partager</button>
+    <button class="btn bo" onclick="ss('new')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>Nouveau devis</button>`;
 }
 
-// ── HISTORIQUE ──
-async function renderHistory() {
-  const c = document.getElementById('historyContent');
-  c.innerHTML = '<div style="text-align:center;padding:24px;color:var(--gray-400)"><div class="spinner" style="margin:0 auto 8px"></div>Chargement...</div>';
-  
-  try {
-    const resp = await fetch(PROXY + '/api/devis');
-    if (resp.ok) {
-      devisHistory = await resp.json();
-      updateHeaderCount();
-    }
-  } catch(e) {
-    console.warn('Could not load from cloud, using local:', e);
+async function genRendu(){
+  if(!cur||!cur._photo)return;
+  document.getElementById('rp').style.display='block';
+  document.getElementById('rr').style.display='none';
+  document.getElementById('btnr').disabled=true;
+  try{
+    const mask=await creerMask(cur._photo);
+    const prompt=cur.flux_prompt||'compacted gravel driveway 0/20 crushed stone, flat clean finished surface, professional earthwork, realistic photo';
+    const resp=await fetch(PROXY+'/api/inpainting',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({image:cur._photo,mask,prompt})});
+    const data=await resp.json();
+    if(data.error)throw new Error(data.error);
+    document.getElementById('rp').style.display='none';
+    document.getElementById('rr').style.display='block';
+    document.getElementById('ri').src=data.image;
+    cur._rendu=data.image;
+    showT('Rendu généré ! ✅');
+  }catch(e){
+    document.getElementById('rp').style.display='none';
+    showT('Erreur : '+e.message);
   }
-
-  if (!devisHistory.length) {
-    c.innerHTML = `<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-text">Aucun devis pour l'instant.<br>Créez votre premier devis !</div></div>`;
-    return;
-  }
-  c.innerHTML = devisHistory.map((d, i) => `
-    <div class="hist-item">
-      <div onclick="voirDevis(${i})" style="flex:1">
-        <div class="hist-type">${d._type}</div>
-        <div class="hist-date">${d._client} — ${d._ville} — ${d._date}</div>
-      </div>
-      <div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:6px">
-        <div class="hist-ttc">${Number(d.total_ttc).toFixed(0)} €</div>
-        <button onclick="supprimerDevis(${d._id}, event)" style="background:var(--danger);border:none;color:white;font-size:10px;padding:3px 8px;border-radius:6px;cursor:pointer">Supprimer</button>
-      </div>
-    </div>`).join('');
+  document.getElementById('btnr').disabled=false;
 }
 
-async function supprimerDevis(id, e) {
-  e.stopPropagation();
-  if (!confirm('Supprimer ce devis ?')) return;
-  try {
-    await fetch(PROXY + '/api/devis/' + id, { method: 'DELETE' });
-    devisHistory = devisHistory.filter(d => d._id !== id);
-    updateHeaderCount();
-    renderHistory();
-    showToast('Devis supprimé');
-  } catch(e) {
-    showToast('Erreur suppression');
-  }
-}
-
-function voirDevis(i) {
-  currentDevis = devisHistory[i];
-  afficherDevis(currentDevis);
-  showScreen('result');
-}
-
-// ── EXPORT PDF ──
-function exportPDF() {
-  if (!currentDevis) return;
-  const d = currentDevis;
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-  const W = 210, H = 297;
-
-  // Header
-  doc.setFillColor(44, 95, 46);
-  doc.rect(0, 0, W, 28, 'F');
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(20); doc.setFont('helvetica', 'bold');
-  doc.text('DEVIS ESTIMATIF', 15, 13);
-  doc.setFontSize(9); doc.setFont('helvetica', 'normal');
-  doc.text(d._type, 15, 20);
-  doc.text(`N° ${new Date().getFullYear()}${String(new Date().getMonth()+1).padStart(2,'0')}-001`, W-15, 13, { align: 'right' });
-  doc.text(`Émis le : ${d._date}  |  Valable 30 jours`, W-15, 20, { align: 'right' });
-
-  // Info boxes
-  doc.setFillColor(240, 247, 240);
-  doc.roundedRect(13, 32, 85, 22, 2, 2, 'F');
-  doc.setTextColor(44, 95, 46); doc.setFontSize(8); doc.setFont('helvetica', 'bold');
-  doc.text('PRESTATAIRE', 16, 37);
-  doc.setTextColor(50, 50, 50); doc.setFont('helvetica', 'normal');
-  doc.text(settings.nom || 'Votre Entreprise', 16, 42);
-  doc.text(settings.adresse || 'Haut Bréda — 38580', 16, 47);
-  doc.text(settings.tel || 'Tél : 06.XX.XX.XX.XX', 16, 52);
-
-  doc.setFillColor(240, 247, 240);
-  doc.roundedRect(W/2+2, 32, W/2-15, 22, 2, 2, 'F');
-  doc.setTextColor(44, 95, 46); doc.setFont('helvetica', 'bold'); doc.setFontSize(8);
-  doc.text('CLIENT', W/2+5, 37);
-  doc.setTextColor(50, 50, 50); doc.setFont('helvetica', 'normal');
-  doc.text(d._client, W/2+5, 42);
-  doc.text(d._ville + ' (38)', W/2+5, 47);
-
-  // Analyse
-  doc.setFillColor(232, 245, 233);
-  doc.roundedRect(13, 57, W-26, 18, 2, 2, 'F');
-  doc.setTextColor(44, 95, 46); doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5);
-  doc.text('ANALYSE', 16, 62);
-  doc.setTextColor(80, 80, 80); doc.setFont('helvetica', 'normal');
-  const analysisLines = doc.splitTextToSize(d.analyse, W-32);
-  doc.text(analysisLines.slice(0,2), 16, 67);
-
-  // Tableau
-  let y = 80;
-  doc.setFillColor(44, 95, 46);
-  doc.rect(13, y, W-26, 8, 'F');
-  doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(8);
-  doc.text('Désignation', 16, y+5.5);
-  doc.text('Qté', 122, y+5.5, {align:'center'});
-  doc.text('P.U. HT', 148, y+5.5, {align:'right'});
-  doc.text('Total HT', W-14, y+5.5, {align:'right'});
-  y += 8;
-
-  (d.postes || []).forEach((p, i) => {
-    if (i % 2 === 0) { doc.setFillColor(248,252,248); doc.rect(13, y, W-26, 10, 'F'); }
-    doc.setTextColor(30,30,30); doc.setFont('helvetica','bold'); doc.setFontSize(8);
-    doc.text(p.nom.substring(0,42), 16, y+4);
-    doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(100,100,100);
-    doc.text(p.detail.substring(0,50), 16, y+8.5);
-    doc.setTextColor(30,30,30); doc.setFontSize(8);
-    doc.text(`${p.qte} ${p.unite}`, 122, y+6, {align:'center'});
-    doc.text(`${Number(p.pu).toFixed(2)} €`, 148, y+6, {align:'right'});
-    doc.setFont('helvetica','bold');
-    doc.text(`${Number(p.total).toFixed(2)} €`, W-14, y+6, {align:'right'});
-    y += 10;
+async function creerMask(p){
+  return new Promise(res=>{
+    const img=new Image();
+    img.onload=()=>{
+      const c=document.createElement('canvas');
+      c.width=img.width;c.height=img.height;
+      const ctx=c.getContext('2d');
+      ctx.fillStyle='black';ctx.fillRect(0,0,c.width,c.height);
+      const t=Math.floor(c.height*.42);
+      const g=ctx.createLinearGradient(0,t,0,t+60);
+      g.addColorStop(0,'rgba(255,255,255,0)');g.addColorStop(1,'white');
+      ctx.fillStyle=g;ctx.fillRect(0,t,c.width,60);
+      ctx.fillStyle='white';ctx.fillRect(0,t+60,c.width,c.height-t-60);
+      res(c.toDataURL('image/png'));
+    };img.src=p;
   });
+}
 
-  // Totaux
-  y += 5;
-  doc.setFillColor(240,247,240);
-  doc.roundedRect(W/2+5, y, W/2-18, 26, 2, 2, 'F');
-  doc.setTextColor(100,100,100); doc.setFont('helvetica','normal'); doc.setFontSize(9);
-  doc.text('Total HT', W/2+9, y+7);
-  doc.text(`${Number(d.total_ht).toFixed(2)} €`, W-16, y+7, {align:'right'});
-  doc.text('TVA 20%', W/2+9, y+13);
-  doc.text(`${Number(d.tva).toFixed(2)} €`, W-16, y+13, {align:'right'});
-  doc.setDrawColor(44,95,46); doc.setLineWidth(0.3);
-  doc.line(W/2+9, y+16, W-16, y+16);
-  doc.setTextColor(44,95,46); doc.setFont('helvetica','bold'); doc.setFontSize(12);
-  doc.text('TOTAL TTC', W/2+9, y+23);
-  doc.text(`${Number(d.total_ttc).toFixed(2)} €`, W-16, y+23, {align:'right'});
+function dlRendu(){
+  if(!cur?._rendu)return;
+  const a=document.createElement('a');a.href=cur._rendu;a.download='rendu_chantier.jpg';a.click();
+}
 
-  // Footer
-  doc.setFillColor(44,95,46);
-  doc.rect(0, H-10, W, 10, 'F');
-  doc.setTextColor(255,255,255); doc.setFont('helvetica','normal'); doc.setFontSize(7);
-  doc.text('Devis estimatif non contractuel — Valable 30 jours', W/2, H-4, {align:'center'});
-
+function exportPDF(){
+  if(!cur)return;
+  const d=cur;const{jsPDF}=window.jspdf;
+  const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  const W=210;
+  doc.setFillColor(44,95,46);doc.rect(0,0,W,28,'F');
+  doc.setTextColor(255,255,255);doc.setFontSize(20);doc.setFont('helvetica','bold');
+  doc.text('DEVIS ESTIMATIF',15,13);
+  doc.setFontSize(9);doc.setFont('helvetica','normal');
+  doc.text(d._type,15,20);
+  doc.text(`${d._date}  |  Valable 30 jours`,W-15,20,{align:'right'});
+  doc.setFillColor(240,247,240);doc.roundedRect(13,32,85,22,2,2,'F');
+  doc.setTextColor(44,95,46);doc.setFontSize(8);doc.setFont('helvetica','bold');doc.text('PRESTATAIRE',16,37);
+  doc.setTextColor(50,50,50);doc.setFont('helvetica','normal');
+  doc.text(cfg.nom||'Votre Entreprise',16,43);doc.text(cfg.adresse||'Haut Bréda — 38580',16,48);doc.text(cfg.tel||'06.XX.XX.XX.XX',16,53);
+  doc.setFillColor(240,247,240);doc.roundedRect(W/2+2,32,W/2-15,22,2,2,'F');
+  doc.setTextColor(44,95,46);doc.setFont('helvetica','bold');doc.setFontSize(8);doc.text('CLIENT',W/2+5,37);
+  doc.setTextColor(50,50,50);doc.setFont('helvetica','normal');doc.text(d._client,W/2+5,43);doc.text(d._ville,W/2+5,48);
+  doc.setFillColor(232,245,233);doc.roundedRect(13,57,W-26,14,2,2,'F');
+  doc.setTextColor(44,95,46);doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.text('ANALYSE',16,62);
+  doc.setTextColor(80,80,80);doc.setFont('helvetica','normal');
+  doc.text(doc.splitTextToSize(d.analyse,W-32).slice(0,2),16,67);
+  let y=76;
+  doc.setFillColor(44,95,46);doc.rect(13,y,W-26,8,'F');
+  doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(8);
+  doc.text('Désignation',16,y+5.5);doc.text('Qté',122,y+5.5,{align:'center'});doc.text('P.U. HT',150,y+5.5,{align:'right'});doc.text('Total HT',W-14,y+5.5,{align:'right'});
+  y+=8;
+  (d.postes||[]).forEach((p,i)=>{
+    if(i%2===0){doc.setFillColor(248,252,248);doc.rect(13,y,W-26,10,'F');}
+    doc.setTextColor(30,30,30);doc.setFont('helvetica','bold');doc.setFontSize(8);doc.text(p.nom.substring(0,42),16,y+4);
+    doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(100,100,100);doc.text(p.detail.substring(0,50),16,y+8.5);
+    doc.setTextColor(30,30,30);doc.setFontSize(8);doc.text(`${p.qte} ${p.unite}`,122,y+6,{align:'center'});doc.text(`${Number(p.pu).toFixed(2)} €`,150,y+6,{align:'right'});
+    doc.setFont('helvetica','bold');doc.text(`${Number(p.total).toFixed(2)} €`,W-14,y+6,{align:'right'});y+=10;
+  });
+  y+=5;doc.setFillColor(240,247,240);doc.roundedRect(W/2+5,y,W/2-18,26,2,2,'F');
+  doc.setTextColor(100,100,100);doc.setFont('helvetica','normal');doc.setFontSize(9);
+  doc.text('Total HT',W/2+9,y+7);doc.text(`${Number(d.total_ht).toFixed(2)} €`,W-16,y+7,{align:'right'});
+  doc.text('TVA 20%',W/2+9,y+13);doc.text(`${Number(d.tva).toFixed(2)} €`,W-16,y+13,{align:'right'});
+  doc.setDrawColor(44,95,46);doc.setLineWidth(0.3);doc.line(W/2+9,y+16,W-16,y+16);
+  doc.setTextColor(44,95,46);doc.setFont('helvetica','bold');doc.setFontSize(12);
+  doc.text('TOTAL TTC',W/2+9,y+23);doc.text(`${Number(d.total_ttc).toFixed(2)} €`,W-16,y+23,{align:'right'});
+  doc.setFillColor(44,95,46);doc.rect(0,287,W,10,'F');
+  doc.setTextColor(255,255,255);doc.setFont('helvetica','normal');doc.setFontSize(7);
+  doc.text('Devis estimatif non contractuel — Valable 30 jours',W/2,293,{align:'center'});
   doc.save(`devis_${d._type.replace(/\s/g,'_')}_${d._date.replace(/\//g,'-')}.pdf`);
-  showToast('PDF téléchargé !');
+  showT('PDF téléchargé !');
 }
 
-// ── PARTAGER ──
-async function partagerDevis() {
-  if (!currentDevis) return;
-  const d = currentDevis;
-  const texte = `📋 DEVIS ESTIMATIF\n${d._type}\nClient : ${d._client} — ${d._ville}\nDate : ${d._date}\n\n✅ Total TTC : ${Number(d.total_ttc).toFixed(2)} €\n⏱ Durée : ${d.duree_heures}h\n📦 Volume : ${d.volume_m3} m³\n\nDevis valable 30 jours.`;
-  if (navigator.share) {
-    try { await navigator.share({ title: 'DevisTP', text: texte }); }
-    catch(e) {}
-  } else {
-    navigator.clipboard?.writeText(texte);
-    showToast('Copié dans le presse-papier !');
-  }
+async function partager(){
+  if(!cur)return;
+  const d=cur;
+  const t=`📋 DEVIS ESTIMATIF\n${d._type}\nClient : ${d._client} — ${d._ville}\nDate : ${d._date}\n\n✅ Total TTC : ${Number(d.total_ttc).toFixed(2)} €\n⏱ Durée : ${d.duree_heures}h\n📦 Volume : ${d.volume_m3} m³\n\nDevis valable 30 jours.`;
+  if(navigator.share){try{await navigator.share({title:'DevisTP',text:t});}catch(e){}}
+  else{navigator.clipboard?.writeText(t);showT('Copié !');}
 }
 
-// ── SETTINGS ──
-function loadSettings() {
-  if (settings.nom) document.getElementById('setNom').value = settings.nom;
-  if (settings.tel) document.getElementById('setTel').value = settings.tel;
-  if (settings.adresse) document.getElementById('setAdresse').value = settings.adresse;
-  if (settings.siret) document.getElementById('setSiret').value = settings.siret;
-  if (settings.tarif) document.getElementById('setTarif').value = settings.tarif;
+async function loadCloud(){
+  try{const r=await fetch(PROXY+'/api/devis');if(r.ok){hist=await r.json();updateHC();}}catch(e){}
 }
 
-function saveSettings() {
-  settings = {
-    nom: document.getElementById('setNom').value,
-    tel: document.getElementById('setTel').value,
-    adresse: document.getElementById('setAdresse').value,
-    siret: document.getElementById('setSiret').value,
-    tarif: document.getElementById('setTarif').value || '75'
-  };
-  localStorage.setItem('settings', JSON.stringify(settings));
-  showToast('Paramètres enregistrés ✓');
+async function renderHist(){
+  const c=document.getElementById('hcon');
+  c.innerHTML='<div style="text-align:center;padding:24px;color:var(--g4)"><div class="sp" style="margin:0 auto 8px"></div>Chargement...</div>';
+  await loadCloud();
+  if(!hist.length){c.innerHTML='<div class="es"><div class="ei">📋</div>Aucun devis.<br>Créez votre premier devis !</div>';return;}
+  c.innerHTML=hist.map((d,i)=>`<div class="hi"><div onclick="voirD(${i})" style="flex:1;cursor:pointer"><div class="hty">${d._type}</div><div class="hd">${d._client} — ${d._ville} — ${d._date}</div></div><div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:6px"><div class="htt">${Number(d.total_ttc).toFixed(0)} €</div><button onclick="supD('${d._id}',event)" style="background:var(--red);border:none;color:white;font-size:10px;padding:3px 8px;border-radius:6px;cursor:pointer">🗑 Suppr.</button></div></div>`).join('');
 }
 
-async function clearAll() {
-  if (!confirm('Supprimer tous les devis ?')) return;
-  try {
-    for (const d of devisHistory) {
-      await fetch(PROXY + '/api/devis/' + d._id, { method: 'DELETE' });
-    }
-    devisHistory = [];
-    updateHeaderCount();
-    showToast('Historique supprimé');
-  } catch(e) {
-    showToast('Erreur : ' + e.message);
-  }
+function voirD(i){cur=hist[i];afficherDevis(cur);ss('result');}
+
+async function supD(id,e){
+  e.stopPropagation();if(!confirm('Supprimer ?'))return;
+  try{await fetch(PROXY+'/api/devis/'+id,{method:'DELETE'});}catch(e){}
+  hist=hist.filter(d=>String(d._id)!==String(id));updateHC();renderHist();showT('Supprimé');
 }
 
-// ── UTILS ──
-function updateHeaderCount() {
-  const n = devisHistory.length;
-  document.getElementById('headerCount').textContent = n + ' devis';
+function loadCfg(){
+  if(cfg.nom)document.getElementById('sn').value=cfg.nom;
+  if(cfg.tel)document.getElementById('st').value=cfg.tel;
+  if(cfg.adresse)document.getElementById('sa').value=cfg.adresse;
+  if(cfg.siret)document.getElementById('ss').value=cfg.siret;
+  if(cfg.tarif)document.getElementById('sh').value=cfg.tarif;
 }
 
-function showLoading(msg) {
-  document.getElementById('loadingOverlay').classList.add('active');
-  document.querySelector('.loading-text').textContent = msg;
-}
-function setLoadingStep(s) { document.getElementById('loadingStep').textContent = s; }
-function hideLoading() { document.getElementById('loadingOverlay').classList.remove('active'); }
-
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg; t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2800);
+function saveSt(){
+  cfg={nom:document.getElementById('sn').value,tel:document.getElementById('st').value,adresse:document.getElementById('sa').value,siret:document.getElementById('ss').value,tarif:document.getElementById('sh').value||'75'};
+  localStorage.setItem('cfg',JSON.stringify(cfg));showT('Paramètres enregistrés ✓');
 }
 
-
-// ── CLIPDROP INPAINTING ──
-async function genererRendu() {
-  if (!currentDevis || !currentDevis._photo) {
-    showToast('Prenez une photo du terrain d\'abord');
-    return;
-  }
-
-  document.getElementById('renduprogress').style.display = 'block';
-  document.getElementById('renduResult').style.display = 'none';
-  document.getElementById('btnRendu').disabled = true;
-
-  try {
-    // Créer un masque automatique (zone sol = bas de l'image)
-    const mask = await creerMasqueAutomatique(currentDevis._photo);
-    const prompt = currentDevis.canva_prompt || 'compacted gravel driveway 0/20, flat clean surface, construction finished';
-
-    const response = await fetch('https://devistp-proxy.onrender.com/api/inpainting', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        image: currentDevis._photo,
-        mask: mask,
-        prompt: prompt
-      })
-    });
-
-    const data = await response.json();
-
-    if (data.error) throw new Error(data.error);
-
-    document.getElementById('renduprogress').style.display = 'none';
-    document.getElementById('renduResult').style.display = 'block';
-    document.getElementById('renduImg').src = data.image;
-    currentDevis._rendu = data.image;
-
-    // Sauvegarder dans l'historique
-    const idx = devisHistory.findIndex(d => d._id === currentDevis._id);
-    if (idx >= 0) { devisHistory[idx]._rendu = data.image; localStorage.setItem('devisHistory', JSON.stringify(devisHistory)); }
-
-    showToast('Rendu généré ! ✅');
-
-  } catch(e) {
-    document.getElementById('renduprogress').style.display = 'none';
-    showToast('Erreur rendu : ' + e.message);
-  }
-  document.getElementById('btnRendu').disabled = false;
+async function clearAll(){
+  if(!confirm('Supprimer tous les devis ?'))return;
+  for(const d of hist){try{await fetch(PROXY+'/api/devis/'+d._id,{method:'DELETE'});}catch(e){}}
+  hist=[];updateHC();showT('Historique supprimé');
 }
 
-async function creerMasqueAutomatique(photoBase64) {
-  // Créer un masque blanc sur la zone sol (bas 55% de l'image)
-  // et noir sur la zone bâtiment (haut 45%)
-  return new Promise((resolve) => {
-    const img = new Image();
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      canvas.width = img.width;
-      canvas.height = img.height;
-      const ctx = canvas.getContext('2d');
-
-      // Fond noir (zone à garder)
-      ctx.fillStyle = 'black';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      // Zone sol en blanc (zone à remplacer) - bas 55%
-      const solTop = Math.floor(canvas.height * 0.42);
-      const gradient = ctx.createLinearGradient(0, solTop, 0, solTop + 60);
-      gradient.addColorStop(0, 'rgba(255,255,255,0)');
-      gradient.addColorStop(1, 'rgba(255,255,255,255)');
-      ctx.fillStyle = gradient;
-      ctx.fillRect(0, solTop, canvas.width, 60);
-      ctx.fillStyle = 'white';
-      ctx.fillRect(0, solTop + 60, canvas.width, canvas.height - solTop - 60);
-
-      resolve(canvas.toDataURL('image/png'));
-    };
-    img.src = photoBase64;
-  });
-}
-
-function telechargerRendu() {
-  if (!currentDevis || !currentDevis._rendu) return;
-  const a = document.createElement('a');
-  a.href = currentDevis._rendu;
-  a.download = 'rendu_' + (currentDevis._type || 'chantier').replace(/\s/g,'_') + '.png';
-  a.click();
-  showToast('Rendu téléchargé !');
-}
-
-function copyPrompt(text) {
-  navigator.clipboard?.writeText(text).then(() => showToast('Prompt copié !'));
-}
-
-function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+function updateHC(){document.getElementById('hc').textContent=hist.length+' devis';}
+function showL(m){document.getElementById('lo').classList.add('active');document.querySelector('.lt').textContent=m;}
+function setLS(s){document.getElementById('ls').textContent=s;}
+function hideL(){document.getElementById('lo').classList.remove('active');}
+function showT(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2800);}
 </script>
 </body>
 </html>
