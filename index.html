@@ -578,7 +578,7 @@ async function genererDevis() {
   if (photoBase64) {
     setLoadingStep('Analyse de la photo...');
     try {
-      const r = await fetch('https://api.anthropic.com/v1/messages', {
+      const r = await fetch('https://devistp-proxy.onrender.com/api/claude', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -618,7 +618,7 @@ Réponds UNIQUEMENT en JSON brut (pas de markdown) :
 Tarifs réalistes Isère 2025. TVA 20%.`;
 
   try {
-    const r = await fetch('https://api.anthropic.com/v1/messages', {
+    const r = await fetch('https://devistp-proxy.onrender.com/api/claude', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
