@@ -236,6 +236,9 @@ header h1 span{color:var(--gl)}
     <!-- ACHATS -->
     <div class="sc" id="sc-achats"><div id="achats-content"></div></div>
 
+    +"<div style=\"font-family:Barlow Condensed,sans-serif;font-size:13px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--gl);margin-bottom:4px\">MAIN OEUVRE — "+d._type+"</div>"
+    <div class="sc" id="sc-mo"><div id="mo-content"></div></div>
+
     <!-- PARAMÈTRES -->
     <div class="sc" id="sc-settings">
       <div class="card">
@@ -268,6 +271,9 @@ header h1 span{color:var(--gl)}
     <button id="n-achats" onclick="ss('achats')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>Achats
     </button>
+    <button id="n-mo" onclick="ss('mo')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>MO
+    </button>
     <button id="n-settings" onclick="ss('settings')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>Réglages
     </button>
@@ -298,6 +304,7 @@ function ss(n){
   document.getElementById('n-'+n).classList.add('active');
   if(n==='history') renderHist();
   if(n==='achats') renderAchats();
+  if(n==='mo') renderMO();
 }
 
 function handlePhoto(e){
@@ -362,36 +369,71 @@ async function genererDevis(){
 
   setLS('Calcul des postes...');
   const tarif_h = parseFloat(cfg.tarif) || 75;
-  const distChantier = (chantierLat && chantierLng) ? distanceKm(BASE_LAT, BASE_LNG, chantierLat, chantierLng).toFixed(1) : '?';
-  const coutTransfertCalc = (chantierLat && chantierLng) ? coutTransfert(parseFloat(distChantier)) : (tarif_h + 80);
-  const carriereProche = carrieresProcheChantier.length > 0 ? carrieresProcheChantier[0].nom + ' (' + carrieresProcheChantier[0].distChantier.toFixed(1) + 'km du chantier)' : 'Carrière Pontcharra/Allevard';
   const surf = parseFloat(data.surface) || 0;
   const prof = parseFloat(data.profondeur) || 0;
-  const vol = (surf * prof).toFixed(1);
+  const vol = parseFloat((surf * prof).toFixed(2));
+  const distChantierVal = (chantierLat && chantierLng) ? parseFloat(distanceKm(BASE_LAT, BASE_LNG, chantierLat, chantierLng).toFixed(1)) : 15;
+  const coutKmAR = parseFloat((distChantierVal * 2 * 1.5).toFixed(0));
+  const carriereNom = carrieresProcheChantier.length > 0 ? carrieresProcheChantier[0].nom : 'Carriere Pontcharra';
 
-  const prompt = 'Génère un devis terrassement pour mini pelle 2T5 en Isère (Grésivaudan).'
-    + ' Chantier: type=' + data.type
+  const prompt = 'Tu es un expert terrassier en Isère. Génère un devis structuré en 3 parties distinctes pour ce chantier :'
+    + ' type=' + data.type
     + ', sol=' + data.sol
     + ', surface=' + data.surface + 'm2'
     + ', profondeur=' + data.profondeur + 'm'
-    + ', volume estimé=' + vol + 'm3'
-    + ', accès=' + data.acces
-    + ', évacuation terres=' + data.evacuation
+    + ', volume=' + vol + 'm3'
+    + ', evacuation=' + data.evacuation
+    + ', acces=' + data.acces
     + (data.description ? ', notes=' + data.description : '')
-    + (imgDesc ? ', analyse photo=' + imgDesc : '')
-    + '. Taux horaire opérateur+engin: ' + tarif_h + 'euros/h.'
-    + ' METHODE DE CALCUL OBLIGATOIRE: Pour chaque poste, calcule séparément (1) le temps MO en heures x ' + tarif_h + 'euros/h, (2) le coût fourniture HT, puis ADDITIONNE les deux pour obtenir le prix du poste. Le client voit uniquement le prix total du poste, pas le détail MO/fourniture.'
-    + ' STRUCTURE DES POSTES:'
-    + ' - Toujours commencer par Transfert et installation chantier: distance=' + distChantier + 'km depuis Haut Bréda, coût calculé=' + coutTransfertCalc + 'euros (aller-retour ' + (distChantier*2) + 'km x 1.5euros/km + 1h MO)'
-    + ' - Terrassement/décaissage: temps MO x tarif, pas de fourniture pour ce poste'
-    + ' - Fourniture et mise en oeuvre tout-venant 0/31.5: fournisseur=' + carriereProche + ', coût achat matériau (12-15euros/T) + temps pose x tarif'
-    + ' - Fourniture et mise en oeuvre grave 0/20: coût achat matériau (15-18euros/T) + temps pose x tarif'
-    + ' - Compactage et finitions: temps MO x tarif uniquement'
-    + ' - Si évacuation décharge: coût benne (40-60euros/m3) + temps chargement x tarif'
-    + ' EXEMPLE de calcul pour un poste: Fourniture grave 0/20 sur 90m2 ep 8cm = 12T. Achat matériau: 12T x 16euros = 192euros. Temps pose: 1.5h x 75euros = 112euros. Prix poste = 192+112 = 304euros. Unite=fft, qte=1, pu=304, total=304.'
-    + ' Réponds UNIQUEMENT en JSON brut sans backticks:'
-    + ' {"analyse":"1 phrase","volume_m3":' + vol + ',"duree_heures":0,"difficulte":"Facile","postes":[{"nom":"Transfert et installation chantier","detail":"amené repli mini pelle 2T5","unite":"fft","qte":1,"pu":95,"total":95}],"total_ht":0,"tva":0,"total_ttc":0,"conseils":["conseil1"],"flux_prompt":"gravel driveway finished professional"}'
-    + ' Adapte toutes les valeurs. Max 7 postes. TVA 20%.';
+    + (imgDesc ? ', photo=' + imgDesc : '')
+    + '. Distance chantier depuis base Haut Breda: ' + distChantierVal + 'km.'
+    + ' Tarif operateur+engin: ' + tarif_h + 'euros/h.'
+    + ' Carriere la plus proche: ' + carriereNom + '.'
+    + ''
+    + ' RÈGLES DE CALCUL DES PRIX FOURNITURES (prix réels carrière Isère 2025):'
+    + ' - Tout-venant 0/31.5: 8-12 euros/T rendu chantier'
+    + ' - Grave 0/20: 12-16 euros/T rendu chantier'
+    + ' - Sable: 15-20 euros/T'
+    + ' - Béton: 90-110 euros/m3'
+    + ' - Géotextile: 1.5-2.5 euros/m2'
+    + ' - Bordurette béton: 3-5 euros/ml fourni'
+    + ' - Transport benne décharge: 150-200 euros/rotation (10m3)'
+    + ' - Transfert engin: ' + coutKmAR + ' euros (aller-retour ' + distChantierVal + 'km x 1.5euros/km)'
+    + ''
+    + ' RÈGLES DE CALCUL MAIN OEUVRE (tarif=' + tarif_h + 'euros/h):'
+    + ' - Transfert et installation: 1h = ' + tarif_h + ' euros'
+    + ' - Décaissage terrain meuble: 40-80 m3/h selon sol'
+    + ' - Décaissage terrain dur/argileux: 20-40 m3/h'
+    + ' - Réglage et mise à niveau: 0.5h pour 30m2'
+    + ' - Mise en oeuvre grave (régalage): 0.3h pour 10T'
+    + ' - Compactage: 0.5h pour 50m2'
+    + ' - Chargement benne: 0.5h par rotation'
+    + ''
+    + ' Réponds UNIQUEMENT en JSON brut sans backticks ni markdown:'
+    + ' {'
+    + '   "analyse": "description courte du chantier",'
+    + '   "volume_m3": ' + vol + ','
+    + '   "difficulte": "Facile|Moderee|Difficile",'
+    + '   "postes": ['
+    + '     {'
+    + '       "nom": "nom du poste",'
+    + '       "detail": "description courte",'
+    + '       "mo_heures": 1.0,'
+    + '       "mo_cout": 75,'
+    + '       "fourniture_detail": "description fourniture ou vide si aucune",'
+    + '       "fourniture_cout": 0,'
+    + '       "total": 75'
+    + '     }'
+    + '   ],'
+    + '   "total_ht": 0,'
+    + '   "tva": 0,'
+    + '   "total_ttc": 0,'
+    + '   "conseils": ["conseil1"],'
+    + '   "flux_prompt": "english inpainting prompt"'
+    + ' }'
+    + ' IMPORTANT: total de chaque poste = mo_cout + fourniture_cout. total_ht = somme de tous les totaux. TVA 20%.'
+    + ' Calcule précisément : pour ' + vol + 'm3 de décaissage à ' + tarif_h + 'euros/h, si le sol est meuble on fait ~60m3/h donc ' + parseFloat((vol/60).toFixed(1)) + 'h = ' + parseFloat((vol/60*tarif_h).toFixed(0)) + ' euros MO.'
+    + ' Max 6 postes. Toujours commencer par Transfert et installation.';
   try{
     setLS('Génération IA...');
     const r=await fetch(PROXY+'/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:2000,system:'You are a JSON API. You ALWAYS respond with raw JSON only, no markdown, no backticks, no explanation. Only valid JSON starting with { and ending with }.',messages:[{role:'user',content:prompt}]})});
@@ -424,7 +466,22 @@ async function genererDevis(){
 
 function afficherDevis(d){
   const db=d.difficulte==='Facile'?'bgg':d.difficulte==='Difficile'?'bgr':'bga';
-  const ph=d.postes?.map(p=>`<div class="pr"><div style="flex:1"><div class="pn">${p.nom}</div><div class="pd">${p.detail}</div></div><div style="text-align:right;min-width:100px"><div class="pq">${p.qte} ${p.unite} × ${p.pu}€</div><div class="pt">${Number(p.total).toFixed(2)} €</div></div></div>`).join('')||'';
+  const ph=d.postes?.map(p=>{
+    const hasFourniture = p.fourniture_cout && p.fourniture_cout > 0;
+    const hasMO = p.mo_cout && p.mo_cout > 0;
+    const detail_line = (hasMO ? '<span style="font-size:11px;color:var(--g4)">MO: '+Number(p.mo_cout).toFixed(0)+'€</span>' : '')
+      + (hasMO && hasFourniture ? '<span style="font-size:11px;color:var(--g4)"> + </span>' : '')
+      + (hasFourniture ? '<span style="font-size:11px;color:var(--amber)">Fourniture: '+Number(p.fourniture_cout).toFixed(0)+'€</span>' : '');
+    return '<div class="pr">'
+      +'<div style="flex:1"><div class="pn">'+p.nom+'</div>'
+      +'<div class="pd">'+p.detail+'</div>'
+      +(detail_line ? '<div style="margin-top:3px">'+detail_line+'</div>' : '')
+      +'</div>'
+      +'<div style="text-align:right;min-width:80px">'
+      +'<div class="pt">'+Number(p.total).toFixed(0)+' €</div>'
+      +'</div></div>';
+  }).join('')||'';
+
   const ch=d.conseils?.map(c=>`<div class="ci">${c}</div>`).join('')||'';
   document.getElementById('rc').innerHTML=`
     <div class="dhb"><div class="dt">${d._type}</div><div class="dm">${d._client} — ${d._ville} — ${d._date}</div><div class="bgs"><span class="bg bgg">Valable 30 jours</span><span class="bg ${db}">${d.difficulte}</span></div></div>
@@ -436,7 +493,8 @@ function afficherDevis(d){
     ${d._photo?`<div class="rb"><div class="rtl">🎨 Simulation rendu — Flux IA</div><div class="rdc">Flux IA remplace le sol sur votre photo avec la surface après travaux.</div><div id="rp" style="display:none;text-align:center;padding:16px"><div class="sp" style="margin:0 auto 8px"></div><div style="font-size:13px;color:var(--g4)">Génération en cours... (20-30 sec)</div></div><div id="rr" style="display:none;margin-bottom:12px"><div style="font-size:11px;color:var(--gl);margin-bottom:8px">✅ Rendu généré</div><img id="ri" style="width:100%;border-radius:10px;display:block"><button class="btn bo bsm" style="margin-top:8px" onclick="dlRendu()">📥 Télécharger</button></div><button class="btn ba" id="btnr" onclick="genRendu()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 12l3 3 5-5"/></svg>Générer le rendu IA</button></div>`:''}
     <button class="btn bp" onclick="exportPDF()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Télécharger PDF</button>
     <button class="btn bo" onclick="partager()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>Partager</button>
-    <button class="btn bo" onclick="ss('achats')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>Liste des achats</button>
+    <button class="btn bo" onclick="ss('achats')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>Fournitures</button>
+    <button class="btn bo" onclick="ss('mo')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>Main d'oeuvre</button>
     <button class="btn bo" onclick="ss('new')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>Nouveau devis</button>`;
 }
 
@@ -600,6 +658,52 @@ async function supD(id,e){
   hist=hist.filter(d=>String(d._id)!==String(id));updateHC();renderHist();showT('Supprimé');
 }
 
+function renderMO(){
+  const c=document.getElementById('mo-content');
+  if(!cur){
+    c.innerHTML='<div class="es">Generez un devis dabord.</div>';
+    return;
+  }
+  const d=cur;
+  const tarif=parseFloat(cfg.tarif)||75;
+  const totalMO=(d.postes||[]).reduce(function(s,p){return s+Number(p.mo_cout||0);},0);
+  const totalH=(d.postes||[]).reduce(function(s,p){return s+Number(p.mo_heures||0);},0);
+
+  const lignes=(d.postes||[]).map(function(p){
+    const h=Number(p.mo_heures||0);
+    const cout=Number(p.mo_cout||0);
+    const pct=totalMO>0?((cout/totalMO)*100).toFixed(0):0;
+    return '<div style="background:var(--gdp);border:1px solid rgba(255,255,255,.07);border-radius:var(--rs);padding:12px;margin-bottom:8px">'
+      +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">'
+      +'<div style="flex:1"><b style="font-size:14px">'+p.nom+'</b>'
+      +'<div style="font-size:12px;color:var(--g4);margin-top:2px">'+p.detail+'</div></div>'
+      +'<div style="text-align:right">'
+      +'<div style="font-size:18px;font-weight:700;color:var(--gl)">'+cout.toFixed(0)+' €</div>'
+      +'<div style="font-size:11px;color:var(--g4)">'+h.toFixed(1)+'h x '+tarif+'€</div>'
+      +'</div></div>'
+      +'<div style="background:rgba(255,255,255,.06);border-radius:4px;height:6px;overflow:hidden">'
+      +'<div style="background:var(--gl);height:100%;width:'+pct+'%"></div>'
+      +'</div></div>';
+  }).join('');
+
+  c.innerHTML=''
+    +'<div style="margin-bottom:12px">'
+    +'<div style="font-family:Barlow Condensed,sans-serif;font-size:13px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--gl);margin-bottom:4px">MAIN OEUVRE</div>'
+    +'<div style="font-size:12px;color:var(--g4)">'+d._client+' — '+d._date+'</div>'
+    +'</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px">'
+    +'<div class="cb"><div class="cv">'+totalH.toFixed(1)+'h</div><div class="cl">Temps total</div></div>'
+    +'<div class="cb" style="border-color:rgba(90,158,93,.5)"><div class="cv">'+totalMO.toFixed(0)+'€</div><div class="cl">Total MO HT</div></div>'
+    +'</div>'
+    +'<div class="card"><div class="ct">Detail par poste</div>'+lignes+'</div>'
+    +'<div style="background:rgba(44,95,46,.1);border:1px solid rgba(90,158,93,.2);border-radius:var(--r);padding:12px;margin-bottom:8px">'
+    +'<div style="font-size:12px;color:var(--g4);margin-bottom:4px">Tarif applique</div>'
+    +'<div style="font-size:18px;font-weight:700;color:var(--gl)">'+tarif+' €/h</div>'
+    +'<div style="font-size:11px;color:var(--g4);margin-top:2px">Operateur + mini pelle 2T5 — modifiable dans Reglages</div>'
+    +'</div>'
+    +"<button class=\"btn bo\" style=\"margin-top:8px\" onclick=\"ss('result')\">← Retour devis</button>";
+}
+
 function renderAchats(){
   const c=document.getElementById('achats-content');
   if(!cur){
@@ -611,14 +715,11 @@ function renderAchats(){
   // Extraire les fournitures des postes
   const fournitures=[];
   let totalFournitures=0;
-  const motsCles=['tout-venant','grave','sable','béton','beton','tuyau','drain','bordure','bordurette','géotextile','geotextile','gabion','enrobé','enrobe','remblai','gravier','concassé','concasse','ciment','treillis','parpaing','ferraille'];
-  
+  // Utiliser directement fourniture_cout du JSON
   (d.postes||[]).forEach(p=>{
-    const nomLower=p.nom.toLowerCase()+' '+p.detail.toLowerCase();
-    const isFourniture=motsCles.some(m=>nomLower.includes(m));
-    if(isFourniture){
+    if(p.fourniture_cout && Number(p.fourniture_cout) > 0){
       fournitures.push(p);
-      totalFournitures+=Number(p.total);
+      totalFournitures+=Number(p.fourniture_cout);
     }
   });
 
@@ -660,12 +761,12 @@ function renderAchats(){
       +'<div style="font-size:11px;color:var(--g4);margin-top:4px;font-style:italic">ℹ️ '+f.note+'</div>'
       +'</div>'):'';
     return '<div style="background:var(--gdp);border:1px solid rgba(255,255,255,.07);border-radius:var(--rs);padding:12px;margin-bottom:8px">'
-      +'<div style="display:flex;justify-content:space-between">'
+      +'<div style="display:flex;justify-content:space-between;margin-bottom:4px">'
       +'<div style="flex:1"><b style="font-size:14px">'+p.nom+'</b>'
-      +'<div style="font-size:12px;color:var(--g4)">'+p.detail+'</div></div>'
+      +'<div style="font-size:12px;color:var(--g4)">'+p.fourniture_detail+'</div></div>'
       +'<div style="text-align:right">'
-      +'<div style="font-size:16px;font-weight:700;color:var(--gl)">'+Number(p.total).toFixed(0)+' €</div>'
-      +'<div style="font-size:11px;color:var(--g4)">'+p.qte+' '+p.unite+' x '+p.pu+'€</div>'
+      +'<div style="font-size:18px;font-weight:700;color:var(--amber)">'+Number(p.fourniture_cout).toFixed(0)+' €</div>'
+      +'<div style="font-size:11px;color:var(--g4)">fourniture HT</div>'
       +'</div></div>'+fBadge+'</div>';
   }).join('');
 
