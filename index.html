@@ -204,12 +204,20 @@ header h1 span{color:var(--gl)}
         </div>
       </div>
 
+      <div class="card" id="carrieres-card" style="display:none">
+        <div class="ct">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          Carrières à proximité
+        </div>
+        <div id="carrieres-liste" style="font-size:13px;color:var(--g4)">Entrez la ville du chantier...</div>
+      </div>
+
       <div class="card">
         <div class="ct">Informations</div>
         <div class="fg2"><label>Description / contraintes</label><textarea id="de" placeholder="Seuil garage à respecter, matériaux déjà livrés..."></textarea></div>
         <div class="fg">
           <div class="fg2"><label>Nom client</label><input type="text" id="nc" placeholder="M. Dupont"></div>
-          <div class="fg2"><label>Ville</label><input type="text" id="vc" placeholder="Crolles"></div>
+          <div class="fg2"><label>Ville / Adresse chantier</label><input type="text" id="vc" placeholder="Crolles, 38920" oninput="rechercherCarrieres()"></div>
         </div>
       </div>
 
@@ -353,28 +361,37 @@ async function genererDevis(){
   }
 
   setLS('Calcul des postes...');
-  const prompt=`Devis terrassement mini pelle 2T5 Isère.
-Type:${data.type} Sol:${data.sol} Surface:${data.surface}m2 Prof:${data.profondeur}m Acces:${data.acces} Evac:${data.evacuation}
-${data.description?'Notes:'+data.description:''}${imgDesc?'Photo:'+imgDesc:''}
+  const tarif_h = parseFloat(cfg.tarif) || 75;
+  const distChantier = (chantierLat && chantierLng) ? distanceKm(BASE_LAT, BASE_LNG, chantierLat, chantierLng).toFixed(1) : '?';
+  const coutTransfertCalc = (chantierLat && chantierLng) ? coutTransfert(parseFloat(distChantier)) : (tarif_h + 80);
+  const carriereProche = carrieresProcheChantier.length > 0 ? carrieresProcheChantier[0].nom + ' (' + carrieresProcheChantier[0].distChantier.toFixed(1) + 'km du chantier)' : 'Carrière Pontcharra/Allevard';
+  const surf = parseFloat(data.surface) || 0;
+  const prof = parseFloat(data.profondeur) || 0;
+  const vol = (surf * prof).toFixed(1);
 
-RÈGLES STRICTES pour les postes du devis :
-1. JAMAIS afficher les heures de MO séparément - la MO est INCLUSE dans chaque poste forfaitaire
-2. Les postes sont au FORFAIT ou à la TONNE/m2/ml - pas à l'heure
-3. TOUJOURS inclure un poste "Transfert et installation chantier" en premier (forfait 80-150€)
-4. Inclure OBLIGATOIREMENT les fournitures : tout-venant 0/31.5 (12-15€/T), grave 0/20 (15-20€/T), autres selon chantier
-5. Le prix de chaque poste inclut déjà la MO + engin + fourniture (prix tout compris)
-
-Exemple de postes corrects :
-- "Transfert et installation chantier" : forfait
-- "Décaissage et évacuation terres" : forfait ou m3
-- "Fourniture et mise en oeuvre tout-venant 0/31.5" : T (prix fourni+posé)
-- "Fourniture et mise en oeuvre grave 0/20" : T (prix fourni+posé)
-- "Compactage et finitions" : forfait
-
-JSON UNIQUEMENT sans backticks :
-{"analyse":"1 phrase","volume_m3":0,"duree_heures":0,"difficulte":"Facile","postes":[{"nom":"Transfert et installation chantier","detail":"amené repli engin mini pelle 2T5","unite":"fft","qte":1,"pu":95,"total":95},{"nom":"Fourniture et pose grave 0/20","detail":"couche finition compactée","unite":"T","qte":10,"pu":32,"total":320}],"total_ht":0,"tva":0,"total_ttc":0,"conseils":["conseil1"],"flux_prompt":"gravel driveway finished professional"}
-Adapte toutes les valeurs. Max 7 postes. Prix réalistes Isère 2025. TVA 20%.`;
-
+  const prompt = 'Génère un devis terrassement pour mini pelle 2T5 en Isère (Grésivaudan).'
+    + ' Chantier: type=' + data.type
+    + ', sol=' + data.sol
+    + ', surface=' + data.surface + 'm2'
+    + ', profondeur=' + data.profondeur + 'm'
+    + ', volume estimé=' + vol + 'm3'
+    + ', accès=' + data.acces
+    + ', évacuation terres=' + data.evacuation
+    + (data.description ? ', notes=' + data.description : '')
+    + (imgDesc ? ', analyse photo=' + imgDesc : '')
+    + '. Taux horaire opérateur+engin: ' + tarif_h + 'euros/h.'
+    + ' METHODE DE CALCUL OBLIGATOIRE: Pour chaque poste, calcule séparément (1) le temps MO en heures x ' + tarif_h + 'euros/h, (2) le coût fourniture HT, puis ADDITIONNE les deux pour obtenir le prix du poste. Le client voit uniquement le prix total du poste, pas le détail MO/fourniture.'
+    + ' STRUCTURE DES POSTES:'
+    + ' - Toujours commencer par Transfert et installation chantier: distance=' + distChantier + 'km depuis Haut Bréda, coût calculé=' + coutTransfertCalc + 'euros (aller-retour ' + (distChantier*2) + 'km x 1.5euros/km + 1h MO)'
+    + ' - Terrassement/décaissage: temps MO x tarif, pas de fourniture pour ce poste'
+    + ' - Fourniture et mise en oeuvre tout-venant 0/31.5: fournisseur=' + carriereProche + ', coût achat matériau (12-15euros/T) + temps pose x tarif'
+    + ' - Fourniture et mise en oeuvre grave 0/20: coût achat matériau (15-18euros/T) + temps pose x tarif'
+    + ' - Compactage et finitions: temps MO x tarif uniquement'
+    + ' - Si évacuation décharge: coût benne (40-60euros/m3) + temps chargement x tarif'
+    + ' EXEMPLE de calcul pour un poste: Fourniture grave 0/20 sur 90m2 ep 8cm = 12T. Achat matériau: 12T x 16euros = 192euros. Temps pose: 1.5h x 75euros = 112euros. Prix poste = 192+112 = 304euros. Unite=fft, qte=1, pu=304, total=304.'
+    + ' Réponds UNIQUEMENT en JSON brut sans backticks:'
+    + ' {"analyse":"1 phrase","volume_m3":' + vol + ',"duree_heures":0,"difficulte":"Facile","postes":[{"nom":"Transfert et installation chantier","detail":"amené repli mini pelle 2T5","unite":"fft","qte":1,"pu":95,"total":95}],"total_ht":0,"tva":0,"total_ttc":0,"conseils":["conseil1"],"flux_prompt":"gravel driveway finished professional"}'
+    + ' Adapte toutes les valeurs. Max 7 postes. TVA 20%.';
   try{
     setLS('Génération IA...');
     const r=await fetch(PROXY+'/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:2000,system:'You are a JSON API. You ALWAYS respond with raw JSON only, no markdown, no backticks, no explanation. Only valid JSON starting with { and ending with }.',messages:[{role:'user',content:prompt}]})});
@@ -430,20 +447,48 @@ async function genRendu(){
   document.getElementById('btnr').disabled=true;
   try{
     const mask=await creerMask(cur._photo);
-    const prompt=cur.flux_prompt||'compacted gravel driveway 0/20 crushed stone, flat clean finished surface, professional earthwork, realistic photo';
-    const resp=await fetch(PROXY+'/api/inpainting',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({image:cur._photo,mask,prompt})});
-    const data=await resp.json();
-    if(data.error)throw new Error(data.error);
-    document.getElementById('rp').style.display='none';
-    document.getElementById('rr').style.display='block';
-    document.getElementById('ri').src=data.image;
-    cur._rendu=data.image;
-    showT('Rendu généré ! ✅');
+    const prompt=cur.flux_prompt||'compacted gravel driveway 0/20, flat clean finished surface, professional earthwork, realistic photo';
+
+    // Soumettre le job — réponse immédiate, pas de timeout
+    setRenduStatus('Envoi de la photo...');
+    const sr=await fetch(PROXY+'/api/inpainting/submit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({image:cur._photo,mask,prompt})});
+    const sd=await sr.json();
+    if(sd.error) throw new Error(sd.error);
+    const rid=sd.request_id;
+    console.log('Job submitted:', rid);
+
+    // Polling côté client — pas de timeout serveur
+    for(let i=0;i<45;i++){
+      await new Promise(r=>setTimeout(r,4000));
+      setRenduStatus('Génération en cours... ('+(i*4+4)+'s)');
+      try{
+        const pr=await fetch(PROXY+'/api/inpainting/status/'+rid);
+        const pd=await pr.json();
+        console.log('Poll '+i+':', pd.status);
+        if(pd.status==='completed'){
+          document.getElementById('rp').style.display='none';
+          document.getElementById('rr').style.display='block';
+          document.getElementById('ri').src=pd.image;
+          cur._rendu=pd.image;
+          showT('Rendu généré ✅');
+          document.getElementById('btnr').disabled=false;
+          return;
+        }
+        if(pd.status==='error') throw new Error(pd.error||'Erreur Flux IA');
+        if(pd.queue_position) setRenduStatus('File attente : position '+pd.queue_position+'...');
+      }catch(pe){ console.warn('Poll err:', pe.message); }
+    }
+    throw new Error('Timeout — réessayez dans quelques instants');
   }catch(e){
     document.getElementById('rp').style.display='none';
     showT('Erreur : '+e.message);
   }
   document.getElementById('btnr').disabled=false;
+}
+
+function setRenduStatus(msg){
+  const rp=document.getElementById('rp');
+  if(rp) rp.innerHTML='<div class="sp" style="margin:0 auto 8px"></div><div style="font-size:13px;color:var(--g4)">'+msg+'</div>';
 }
 
 async function creerMask(p){
@@ -584,22 +629,36 @@ function renderAchats(){
 
   // Liste achats avec fournisseurs locaux
   const fournisseurs={
-    'tout-venant':'Carrière locale (Allevard, Pontcharra)',
-    'grave':'Carrière locale (Allevard, Pontcharra)',
-    'sable':'Négoce matériaux Grésivaudan',
-    'béton':'Béton Chantiers Isère / Point P',
-    'beton':'Béton Chantiers Isère / Point P',
-    'tuyau':'Point P / Réseau Pro',
-    'drain':'Point P / Réseau Pro',
-    'bordure':'Négoce matériaux / Kiloutou',
-    'bordurette':'Négoce matériaux / Kiloutou',
-    'géotextile':'Point P / Bricomarché',
-    'gravier':'Carrière locale (Allevard, Pontcharra)',
+    'tout-venant': { nom:'Carrière de Pontcharra / Allevard', tel:'04 76 97 60 00', note:'Commander 48h avant, livraison possible' },
+    'grave':       { nom:'Carrière de Pontcharra / Allevard', tel:'04 76 97 60 00', note:'Prix variable selon tonnage, négocier' },
+    'gravier':     { nom:'Carrière de Pontcharra / Allevard', tel:'04 76 97 60 00', note:'Commander 48h avant' },
+    'concassé':    { nom:'Carrière de Pontcharra / Allevard', tel:'04 76 97 60 00', note:'Commander 48h avant' },
+    'sable':       { nom:'Point P Pontcharra', tel:'04 76 97 10 22', note:'Retrait possible le jour même' },
+    'béton':       { nom:'Béton Chantiers Isère — Crolles', tel:'04 76 08 08 08', note:'Commander la veille pour livraison' },
+    'beton':       { nom:'Béton Chantiers Isère — Crolles', tel:'04 76 08 08 08', note:'Commander la veille pour livraison' },
+    'tuyau':       { nom:'Point P Pontcharra', tel:'04 76 97 10 22', note:'Stock disponible' },
+    'drain':       { nom:'Point P Pontcharra', tel:'04 76 97 10 22', note:'Drains annelés dispo en stock' },
+    'géotextile':  { nom:'Point P Pontcharra', tel:'04 76 97 10 22', note:'Rouleaux 2m ou 4m de large' },
+    'geotextile':  { nom:'Point P Pontcharra', tel:'04 76 97 10 22', note:'Rouleaux 2m ou 4m de large' },
+    'bordure':     { nom:'Espace Matériaux Crolles', tel:'04 76 08 12 34', note:'Bordures T2 et CS2 en stock' },
+    'bordurette':  { nom:'Espace Matériaux Crolles', tel:'04 76 08 12 34', note:'Bordurettes béton en stock' },
+    'gabion':      { nom:'Point P Pontcharra', tel:'04 76 97 10 22', note:'Sur commande 3-5 jours' },
+    'remblai':     { nom:'Carrière de Pontcharra / Allevard', tel:'04 76 97 60 00', note:'Remblai tout-venant' },
+    'enrobé':      { nom:'Eurovia Isère — Crolles', tel:'04 76 08 50 00', note:'Sur commande, livraison camion' },
+    'enrobe':      { nom:'Eurovia Isère — Crolles', tel:'04 76 08 50 00', note:'Sur commande, livraison camion' },
   };
 
   const lignesFournitures=fournitures.map(p=>{
     const fournisseur=Object.entries(fournisseurs).find(([k])=>p.nom.toLowerCase().includes(k)||p.detail.toLowerCase().includes(k));
-    const fBadge=fournisseur?('<div style="background:rgba(44,95,46,.15);border-radius:6px;padding:5px 8px;margin-top:6px;font-size:11px;color:var(--gl)">📍 '+fournisseur[1]+'</div>'):'';
+    const f=fournisseur?fournisseur[1]:null;
+    const fBadge=f?('<div style="background:rgba(44,95,46,.12);border:1px solid rgba(90,158,93,.25);border-radius:8px;padding:10px;margin-top:8px">'
+      +'<div style="font-size:12px;font-weight:600;color:var(--gl);margin-bottom:4px">📍 '+f.nom+'</div>'
+      +'<div style="display:flex;justify-content:space-between;align-items:center">'
+      +'<a href="tel:'+f.tel+'" style="font-size:13px;color:var(--amber);text-decoration:none;font-weight:600">📞 '+f.tel+'</a>'
+      +'<span style="font-size:10px;color:var(--g4)">Appuyer pour appeler</span>'
+      +'</div>'
+      +'<div style="font-size:11px;color:var(--g4);margin-top:4px;font-style:italic">ℹ️ '+f.note+'</div>'
+      +'</div>'):'';
     return '<div style="background:var(--gdp);border:1px solid rgba(255,255,255,.07);border-radius:var(--rs);padding:12px;margin-bottom:8px">'
       +'<div style="display:flex;justify-content:space-between">'
       +'<div style="flex:1"><b style="font-size:14px">'+p.nom+'</b>'
@@ -646,6 +705,114 @@ function renderAchats(){
 
   c.innerHTML = htmlHeader + htmlMetrics + htmlFournitures + htmlMO + htmlRentabilite
     + "<button class=\"btn bo\" onclick=\"ss('result')\" style=\"margin-top:0\">← Retour au devis</button>";
+}
+
+// ── BASE OPÉRATEUR (Haut Bréda) ──
+const BASE_LAT = 45.3833; // Haut Bréda / Allevard
+const BASE_LNG = 6.1167;
+const BASE_NOM = 'Haut Bréda (38580)';
+
+// ── CARRIÈRES CONNUES EN ISÈRE / SAVOIE ──
+const CARRIERES_DB = [
+  { nom:'Carrière de Pontcharra (Lafarge)',   lat:45.4270, lng:6.0220, tel:'04 76 97 60 00', materiaux:['tout-venant','grave 0/20','grave 0/31.5','concassé'] },
+  { nom:"Carriere Allevard",               lat:45.3917, lng:6.1333, tel:'04 76 97 50 00', materiaux:['tout-venant','remblai','grave 0/20'] },
+  { nom:'Carrière de Crolles (Cemex)',        lat:45.2850, lng:5.9950, tel:'04 76 08 15 00', materiaux:['grave 0/20','grave 0/31.5','sable','béton'] },
+  { nom:'Carrière de La Rochette',            lat:45.4500, lng:6.1000, tel:'04 79 25 51 00', materiaux:['tout-venant','grave 0/20','concassé'] },
+  { nom:'Carrière de Goncelin',              lat:45.3400, lng:6.0000, tel:'04 76 71 80 00', materiaux:['tout-venant','grave 0/31.5','remblai'] },
+  { nom:'Carrière de Chapareillan',          lat:45.3600, lng:5.9800, tel:'04 76 45 20 00', materiaux:['grave 0/20','sable','tout-venant'] },
+  { nom:'Point P Pontcharra',                lat:45.4220, lng:6.0200, tel:'04 76 97 10 22', materiaux:['tuyau','drain','géotextile','sable','ciment','bordurette'] },
+  { nom:'Espace Matériaux Crolles',          lat:45.2830, lng:5.9920, tel:'04 76 08 12 34', materiaux:['bordure','bordurette','parpaing','béton'] },
+  { nom:"Beton Chantiers Isere Crolles",     lat:45.2900, lng:5.9980, tel:"04 76 08 08 08", materiaux:["beton","sable"] },
+  { nom:"Eurovia Isere Grenoble",            lat:45.1900, lng:5.7200, tel:"04 76 50 10 00", materiaux:["enrobe","grave bitume"] },
+];
+
+function distanceKm(lat1, lng1, lat2, lng2) {
+  const R = 6371;
+  const dLat = (lat2-lat1) * Math.PI/180;
+  const dLng = (lng2-lng1) * Math.PI/180;
+  const a = Math.sin(dLat/2)*Math.sin(dLat/2) +
+    Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*
+    Math.sin(dLng/2)*Math.sin(dLng/2);
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+// Distance depuis la base opérateur
+function distanceDepuisBase(lat, lng) {
+  return distanceKm(BASE_LAT, BASE_LNG, lat, lng);
+}
+
+// Calculer le coût de transfert selon la distance
+function coutTransfert(distKm) {
+  // Camion benne + mini pelle sur remorque : 1.5€/km aller-retour + 1h de chargement
+  const tarif = parseFloat(cfg.tarif) || 75;
+  const kmTotal = distKm * 2; // aller-retour
+  const coutKm = kmTotal * 1.5; // 1.5€/km
+  const coutMO = 1 * tarif; // 1h chargement/déchargement
+  return Math.round(coutKm + coutMO);
+}
+
+let chantierLat = null;
+let chantierLng = null;
+let carrieresProcheChantier = [];
+
+async function rechercherCarrieres() {
+  const ville = document.getElementById('vc').value;
+  if (!ville || ville.length < 3) {
+    document.getElementById('carrieres-card').style.display = 'none';
+    return;
+  }
+
+  // Géocoder la ville avec Nominatim (gratuit)
+  try {
+    const resp = await fetch(
+      'https://nominatim.openstreetmap.org/search?q=' + encodeURIComponent(ville + ', Isère, France') +
+      '&format=json&limit=1',
+      { headers: { 'Accept-Language': 'fr' } }
+    );
+    const data = await resp.json();
+    if (!data.length) return;
+
+    chantierLat = parseFloat(data[0].lat);
+    chantierLng = parseFloat(data[0].lon);
+
+    // Calculer distances depuis le chantier pour chaque carrière
+    const avecDistances = CARRIERES_DB.map(c => ({
+      ...c,
+      distChantier: distanceKm(chantierLat, chantierLng, c.lat, c.lng),
+      distBase: distanceKm(BASE_LAT, BASE_LNG, c.lat, c.lng)
+    })).sort((a,b) => a.distChantier - b.distChantier);
+
+    carrieresProcheChantier = avecDistances.slice(0, 5);
+
+    // Distance chantier depuis la base
+    const distChantier = distanceKm(BASE_LAT, BASE_LNG, chantierLat, chantierLng);
+    const cout = coutTransfert(distChantier);
+
+    // Afficher
+    const card = document.getElementById('carrieres-card');
+    card.style.display = 'block';
+
+    const liste = document.getElementById('carrieres-liste');
+    liste.innerHTML =
+      '<div style="background:rgba(245,159,10,.1);border:1px solid rgba(245,159,10,.3);border-radius:8px;padding:10px;margin-bottom:12px">'
+      +'<div style="font-size:12px;color:var(--amber);font-weight:600;margin-bottom:2px">📏 Distance chantier depuis votre base</div>'
+      +'<div style="font-size:20px;font-weight:700;color:var(--w)">' + distChantier.toFixed(1) + ' km</div>'
+      +'<div style="font-size:12px;color:var(--g4)">Coût transfert estimé : <b style="color:var(--amber)">' + cout + ' €</b> (aller-retour + 1h MO)</div>'
+      +'</div>'
+      + avecDistances.slice(0,4).map(c =>
+        '<div style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06)">'
+        +'<div style="display:flex;justify-content:space-between;align-items:center">'
+        +'<div style="font-size:13px;font-weight:600">'+c.nom+'</div>'
+        +'<div style="font-size:13px;font-weight:700;color:var(--gl)">'+c.distChantier.toFixed(1)+' km</div>'
+        +'</div>'
+        +'<div style="font-size:11px;color:var(--g4);margin-top:2px">'+c.materiaux.join(', ')+'</div>'
+        +'<a href="tel:'+c.tel+'" style="font-size:12px;color:var(--amber);text-decoration:none">📞 '+c.tel+'</a>'
+        +'</div>'
+      ).join('');
+
+  } catch(e) {
+    console.warn('Geocoding error:', e);
+  }
 }
 
 function loadCfg(){
