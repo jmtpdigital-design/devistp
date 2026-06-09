@@ -371,7 +371,7 @@ async function genererDevis() {
   if (photo) {
     setLS('Analyse photo...');
     try {
-      var r = await fetch(PROXY+'/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:200,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:'image/jpeg',data:photo.split(',')[1]}},{type:'text',text:'Decris ce terrain pour terrassement en 2 phrases: sol, etat, acces, contraintes.'}]}]})});
+      var r = await fetch(PROXY+'/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:200,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:'image/jpeg',data:photo.split(',')[1]}},{type:'text',text:'Decris ce terrain pour terrassement en 2 phrases: sol, etat, acces, contraintes.'}]}]})});
       var d = await r.json();
       imgDesc = (d.content&&d.content[0]) ? d.content[0].text : '';
     } catch(e) {}
@@ -379,39 +379,61 @@ async function genererDevis() {
 
   setLS('Calcul du devis...');
 
-  var prompt = 'Devis terrassement mini pelle 2T5 Isere. Tarif operateur+engin: '+tarif+'euros/h.'
-    +' Chantier: type='+data.type+', sol='+data.sol+', surface='+surf+'m2, profondeur='+prof+'m, volume='+vol+'m3'
-    +', acces='+data.acces+', evacuation='+data.evac
-    +(data.desc?', notes='+data.desc:'')+(imgDesc?', photo='+imgDesc:'')
-    +'. Distance chantier: '+distC+'km. Carriere proche: '+carrNom+'.'
-    +' VITESSES REELLES MINI PELLE 2T5 (ne pas depasser ces valeurs):'
-    +' - Decaissage terrain meuble + chargement: 9 m3/h (8 m3/h si finition a la main devant batiment)'
+  var prompt = 'Tu es un expert en terrassement TP en France, specialise mini pelle 2T5 dans le Gresivaudan (Isere).'
+    +' Chantier a devisser: type='+data.type+', sol='+data.sol+', surface='+surf+'m2, profondeur='+prof+'m'
+    +', volume estimé='+vol+'m3, acces='+data.acces+', evacuation='+data.evac
+    +(data.desc?', notes='+data.desc:'')+(imgDesc?', observation photo='+imgDesc:'')
+    +'. Distance chantier depuis base Haut Breda: '+distC+'km. Carriere proche: '+carrNom+'.'
+    +' VITESSES REELLES DE LA MACHINE (respecter strictement):'
+    +' - Decaissage terrain meuble + chargement benne: 9 m3/h (8 m3/h si travail fin devant batiment ou obstacle)'
     +' - Decaissage argile ou terrain dur: 6 m3/h'
-    +' - Mise en oeuvre grave 0/20 (regalage + compactage): 10 T/h'
-    +' - Chargement camion benne: variable selon distance depot, compter 0.5h par rotation minimum'
-    +' PRIX FOURNITURES REELS carriere Isere (prix depart carriere, ajouter livraison si necessaire):'
-    +' - Tout-venant 0/31.5: 8-10 euros/T'
-    +' - Grave 0/20: 10-13 euros/T'
-    +' - Sable: 15-18 euros/T'
-    +' - Beton: 95-110 euros/m3'
-    +' - Bordurette beton: 3-5 euros/ml fourni'
-    +' - Geotextile: 1.5-2 euros/m2'
-    +' CALCUL OBLIGATOIRE PAR POSTE:'
-    +' 1. Calculer le volume ou tonnage reel du poste'
-    +' 2. mo_heures = volume / vitesse (arrondi au quart dheure superieur)'
-    +' 3. mo_cout = mo_heures x '+tarif
-    +' 4. fourniture_cout = quantite x prix unitaire reel (0 si pas de fourniture)'
-    +' 5. total = mo_cout + fourniture_cout'
-    +' EXEMPLE: Decaissage 10.5m3 terrain meuble = 10.5/9 = 1.17h arrondi a 1.25h = '+Math.round(1.25*tarif)+' euros MO. Pas de fourniture. Total = '+Math.round(1.25*tarif)+' euros.'
-    +' EXEMPLE: Grave 0/20 sur 90m2 ep 8cm = 12T. MO: 12/10=1.2h arrondi 1.25h = '+Math.round(1.25*tarif)+' euros. Fourniture: 12T x 11euros = 132 euros. Total = '+(Math.round(1.25*tarif)+132)+' euros.'
-    +' REGLE: toujours poste Transfert en premier, mo_cout='+coutTrans+', fourniture_cout=0.'
-    +' Reponds JSON brut sans backticks: {"analyse":"1 phrase","volume_m3":'+vol+',"difficulte":"Facile",'
-    +'"postes":[{"nom":"Transfert et installation","detail":"amene repli mini pelle 2T5 - '+distC+'km","mo_heures":1,"mo_cout":'+coutTrans+',"fourniture_detail":"","fourniture_cout":0,"total":'+coutTrans+'}],'
-    +'"total_ht":0,"tva":0,"total_ttc":0,"conseils":["conseil"],"flux_prompt":"gravel driveway finished"}'
-    +' Max 6 postes. TVA 20%. JSON uniquement.';
-
+    +' - Mise en oeuvre et regalage grave: 10 T/h'
+    +' - Compactage plaque vibrante: inclus dans mise en oeuvre'
+    +' CALCUL MO PAR POSTE:'
+    +' - mo_heures = quantite / vitesse, arrondi au quart dheure superieur (ex: 1.17h -> 1.25h)'
+    +' - mo_cout = mo_heures x '+tarif+' euros/h'
+    +' TRANSFERT: distance='+distC+'km aller-retour='+(distC*2)+'km. Temps chargement/dechargement=1h. mo_heures=1, mo_cout='+coutTrans+'.'
+    +' FOURNITURES - recherche les prix reels du marche Isere 2025 pour:'
+    +' - Tout-venant 0/31.5: prix carriere + livraison selon distance'
+    +' - Grave 0/20: prix carriere + livraison selon distance'
+    +' - Autres materiaux si besoin'
+    +' Pour chaque fourniture, inclure une fiche_technique avec: norme, granulometrie, usage, avantages'
+    +' PROMPT RENDU PHOTO: genere un prompt detaille pour Flux AI inpainting qui decrit precisement'
+    +' le resultat apres travaux de type '+data.type+' avec surface finale en '+data.evac
+    +' (texture realiste, perspective, eclairage naturel, materiaux TP authentiques)'
+    +' Reponds en JSON brut sans markdown:'
+    +' {"analyse":"description precise du chantier et contraintes",'
+    +'"volume_m3":'+vol+','
+    +'"difficulte":"Facile|Moderee|Difficile",'
+    +'"postes":['
+    +'  {"nom":"Transfert et installation",'
+    +'   "detail":"amene repli mini pelle 2T5 - '+distC+'km",'
+    +'   "mo_heures":1,"mo_cout":'+coutTrans+',"fourniture_detail":"","fourniture_cout":0,'
+    +'   "fiche_technique":null,"total":'+coutTrans+'}'
+    +'],'
+    +'"total_ht":0,"tva":0,"total_ttc":0,'
+    +'"conseils":["conseil pratique 1","conseil pratique 2"],'
+    +'"flux_prompt":"detailed realistic Flux AI inpainting prompt describing the finished '+data.type+' result: specific materials texture, perspective matching the original photo, natural lighting, professional earthwork finish, photorealistic style, no people"}'
+    +' REGLES STRICTES:'
+    +' 1. Max 6 postes'
+    +' 2. TVA 20%'
+    +' 3. total de chaque poste = mo_cout + fourniture_cout'
+    +' 4. total_ht = somme des totaux postes'
+    +' 5. Inclure fiche_technique pour chaque poste avec fourniture (norme, granulometrie, usage, portance, drainage)'
+    +' 6. Prix fournitures: recherche les vrais prix marche Isere 2025, pas des estimations generiques'
+    +' 7. flux_prompt: prompt detaille pour Flux AI inpainting en anglais. DOIT preciser:'
+    +' - PRESERVE (garder intact): batiments, murs, clotures, vehicules, arbres, ciel, elements verticaux'
+    +' - REPLACE (remplacer uniquement): zone sol/terrain visible, surface au sol'
+    +' - NEW SURFACE: texture precise du materiau final (ex: compacted crushed gravel 0/20, grey-beige color,'
+    +' flat leveled surface, subtle tire tracks, realistic aggregate texture, slight moisture sheen)'
+    +' - LIGHTING: conserver leclairage et les ombres de la photo originale'
+    +' - STYLE: photorealistic, construction site, professional earthwork, no people, same camera angle'
+    +' Exemple: "Inpainting: PRESERVE all vertical elements (building walls, pillars, vehicles, trees, sky).'
+    +' REPLACE ONLY the ground surface area with: freshly compacted '+data.type+' finished surface,'
+    +' realistic '+data.sol+' material texture, flat and level, professional TP finish,'
+    +' matching original photo perspective and lighting, photorealistic"';
   try {
-    var resp = await fetch(PROXY+'/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:1500,system:'You are a JSON API. Always respond with raw JSON only, no markdown.',messages:[{role:'user',content:prompt}]})});
+    var resp = await fetch(PROXY+'/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1500,system:'You are a JSON API. Always respond with raw JSON only, no markdown.',messages:[{role:'user',content:prompt}]})});
     var d2 = await resp.json();
     var txt = (d2.content||[]).map(function(i){return i.text||'';}).join('');
     txt = txt.replace(/```json/gi,'').replace(/```/g,'').trim();
@@ -598,6 +620,20 @@ async function supD(id,e) {
 }
 
 // ── ONGLET ACHATS ──
+function ficheHTML(f) {
+  if (!f || typeof f !== 'object') return '';
+  var html = '<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:10px;margin-top:8px">';
+  html += '<div style="font-size:11px;font-weight:600;color:var(--g4);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Fiche technique</div>';
+  if (f.norme) html += '<div style="font-size:12px;margin-bottom:3px"><span style="color:var(--g4)">Norme: </span><span style="color:var(--w)">'+f.norme+'</span></div>';
+  if (f.granulometrie) html += '<div style="font-size:12px;margin-bottom:3px"><span style="color:var(--g4)">Granulometrie: </span><span style="color:var(--w)">'+f.granulometrie+'</span></div>';
+  if (f.usage) html += '<div style="font-size:12px;margin-bottom:3px"><span style="color:var(--g4)">Usage: </span><span style="color:var(--w)">'+f.usage+'</span></div>';
+  if (f.portance) html += '<div style="font-size:12px;margin-bottom:3px"><span style="color:var(--g4)">Portance: </span><span style="color:var(--w)">'+f.portance+'</span></div>';
+  if (f.drainage) html += '<div style="font-size:12px;margin-bottom:3px"><span style="color:var(--g4)">Drainage: </span><span style="color:var(--w)">'+f.drainage+'</span></div>';
+  if (f.avantages) html += '<div style="font-size:12px;margin-top:4px;color:var(--gl);font-style:italic">'+f.avantages+'</div>';
+  html += '</div>';
+  return html;
+}
+
 function renderAchats() {
   var c=document.getElementById('achats-content');
   if(!cur){c.innerHTML='<div class="es">Generez un devis dabord.</div>';return;}
@@ -618,7 +654,9 @@ function renderAchats() {
         +'<div style="font-size:12px;font-weight:600;color:var(--gl);margin-bottom:4px">'+carr.nom+'</div>'
         +'<div style="display:flex;justify-content:space-between;align-items:center">'
         +'<a href="tel:'+carr.tel+'" style="font-size:13px;color:var(--amb);text-decoration:none;font-weight:600">'+carr.tel+'</a>'
-        +'<span style="font-size:11px;color:var(--g4)">'+distInfo+'</span></div></div></div>';
+        +'<span style="font-size:11px;color:var(--g4)">'+distInfo+'</span></div></div>'
+        +(p.fiche_technique ? ficheHTML(p.fiche_technique) : '')
+        +'</div>';
     }
     if(mc>0) {
       lignesM+='<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:13px"><span style="color:var(--g4)">'+p.nom+'</span><span style="font-weight:600">'+mc.toFixed(0)+' €</span></div>';
