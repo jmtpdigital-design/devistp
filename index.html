@@ -191,6 +191,7 @@ header h1 span{color:var(--gl)}
       </button>
     </div>
     <div class="sc" id="sc-result"><div id="rc"></div></div>
+    <div class="sc" id="sc-edit"><div id="edit-content"></div></div>
     <div class="sc" id="sc-history"><div id="hcon"></div></div>
     <div class="sc" id="sc-achats"><div id="achats-content"></div></div>
     <div class="sc" id="sc-mo"><div id="mo-content"></div></div>
@@ -213,7 +214,8 @@ header h1 span{color:var(--gl)}
   </div>
   <div class="bn">
     <button class="active" id="n-new" onclick="showTab('new')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>Nouveau</button>
-    <button id="n-result" onclick="showTab('result')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Devis</button>
+    <button id="n-result" onclick="goResult()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Devis</button>
+    <button id="n-edit" onclick="showTab('edit')" style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Editer</button>
     <button id="n-history" onclick="showTab('history')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>Historique</button>
     <button id="n-achats" onclick="showTab('achats')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>Achats</button>
     <button id="n-mo" onclick="showTab('mo')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>MO</button>
@@ -380,16 +382,31 @@ async function genererDevis() {
   var prompt = 'Devis terrassement mini pelle 2T5 Isere. Tarif operateur+engin: '+tarif+'euros/h.'
     +' Chantier: type='+data.type+', sol='+data.sol+', surface='+surf+'m2, profondeur='+prof+'m, volume='+vol+'m3'
     +', acces='+data.acces+', evacuation='+data.evac
-    +(data.desc?', notes='+data.desc:'')
-    +(imgDesc?', photo='+imgDesc:'')
-    +'. Distance chantier: '+distC+'km. Transfert: '+coutTrans+'euros. Carriere proche: '+carrNom+'.'
-    +' CALCUL PAR POSTE: mo_cout = heures x '+tarif+'. fourniture_cout = prix achat reel materiau (pas MO).'
-    +' total_poste = mo_cout + fourniture_cout.'
-    +' PRIX FOURNITURES REELS: tout-venant 0/31.5 = 10-14euros/T, grave 0/20 = 14-18euros/T, sable = 15-20euros/T.'
-    +' VITESSE MINI PELLE: terrain meuble = 50-70m3/h, argile = 30-50m3/h, rocheux = 10-20m3/h.'
-    +' REGLE: toujours poste "Transfert et installation" en premier avec mo_cout='+coutTrans+' et fourniture_cout=0.'
+    +(data.desc?', notes='+data.desc:'')+(imgDesc?', photo='+imgDesc:'')
+    +'. Distance chantier: '+distC+'km. Carriere proche: '+carrNom+'.'
+    +' VITESSES REELLES MINI PELLE 2T5 (ne pas depasser ces valeurs):'
+    +' - Decaissage terrain meuble + chargement: 9 m3/h (8 m3/h si finition a la main devant batiment)'
+    +' - Decaissage argile ou terrain dur: 6 m3/h'
+    +' - Mise en oeuvre grave 0/20 (regalage + compactage): 10 T/h'
+    +' - Chargement camion benne: variable selon distance depot, compter 0.5h par rotation minimum'
+    +' PRIX FOURNITURES REELS carriere Isere (prix depart carriere, ajouter livraison si necessaire):'
+    +' - Tout-venant 0/31.5: 8-10 euros/T'
+    +' - Grave 0/20: 10-13 euros/T'
+    +' - Sable: 15-18 euros/T'
+    +' - Beton: 95-110 euros/m3'
+    +' - Bordurette beton: 3-5 euros/ml fourni'
+    +' - Geotextile: 1.5-2 euros/m2'
+    +' CALCUL OBLIGATOIRE PAR POSTE:'
+    +' 1. Calculer le volume ou tonnage reel du poste'
+    +' 2. mo_heures = volume / vitesse (arrondi au quart dheure superieur)'
+    +' 3. mo_cout = mo_heures x '+tarif
+    +' 4. fourniture_cout = quantite x prix unitaire reel (0 si pas de fourniture)'
+    +' 5. total = mo_cout + fourniture_cout'
+    +' EXEMPLE: Decaissage 10.5m3 terrain meuble = 10.5/9 = 1.17h arrondi a 1.25h = '+Math.round(1.25*tarif)+' euros MO. Pas de fourniture. Total = '+Math.round(1.25*tarif)+' euros.'
+    +' EXEMPLE: Grave 0/20 sur 90m2 ep 8cm = 12T. MO: 12/10=1.2h arrondi 1.25h = '+Math.round(1.25*tarif)+' euros. Fourniture: 12T x 11euros = 132 euros. Total = '+(Math.round(1.25*tarif)+132)+' euros.'
+    +' REGLE: toujours poste Transfert en premier, mo_cout='+coutTrans+', fourniture_cout=0.'
     +' Reponds JSON brut sans backticks: {"analyse":"1 phrase","volume_m3":'+vol+',"difficulte":"Facile",'
-    +'"postes":[{"nom":"Transfert et installation","detail":"amene repli mini pelle 2T5","mo_heures":1,"mo_cout":'+coutTrans+',"fourniture_detail":"","fourniture_cout":0,"total":'+coutTrans+'}],'
+    +'"postes":[{"nom":"Transfert et installation","detail":"amene repli mini pelle 2T5 - '+distC+'km","mo_heures":1,"mo_cout":'+coutTrans+',"fourniture_detail":"","fourniture_cout":0,"total":'+coutTrans+'}],'
     +'"total_ht":0,"tva":0,"total_ttc":0,"conseils":["conseil"],"flux_prompt":"gravel driveway finished"}'
     +' Max 6 postes. TVA 20%. JSON uniquement.';
 
@@ -406,7 +423,7 @@ async function genererDevis() {
     dv._photo = photo; dv._id = Date.now();
     cur = dv; hist.unshift(dv); updateHC();
     fetch(PROXY+'/api/devis/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(dv)}).catch(function(){});
-    hideL(); afficherDevis(dv); showTab('result');
+    hideL(); afficherEdition(dv); showTab('edit');
   } catch(e) {
     hideL();
     document.getElementById('rc').innerHTML = '<div style="background:rgba(220,38,38,.1);border:1px solid rgba(220,38,38,.3);border-radius:12px;padding:16px;margin:16px 0"><div style="font-size:16px;font-weight:600;color:#f87171;margin-bottom:8px">Erreur</div><div style="font-size:13px;color:var(--g4)">'+e.message+'</div><button class="btn bo" style="margin-top:12px" onclick="showTab(\'new\')">Reessayer</button></div>';
@@ -649,6 +666,104 @@ function renderMO() {
     +'<button class="btn bo" onclick="showTab(\'result\')">Retour au devis</button>';
 }
 
+// ── EDITION POSTES ──
+function recalcPoste(i) {
+  var tarif2 = parseFloat(cfg.tarif)||75;
+  var moH = parseFloat(document.getElementById('mo-h-'+i).value)||0;
+  var foC = parseFloat(document.getElementById('fo-c-'+i).value)||0;
+  var moC = Math.round(moH * tarif2);
+  var tot = moC + foC;
+  document.getElementById('mo-c-'+i).textContent = moC+' euro';
+  document.getElementById('tot-'+i).textContent = tot+' euro';
+  // Recalc total
+  var totalHT = 0;
+  var nb = document.querySelectorAll('[id^="tot-"]').length;
+  for(var j=0;j<nb;j++) {
+    var el = document.getElementById('tot-'+j);
+    if(el) totalHT += parseInt(el.textContent)||0;
+  }
+  var tva = totalHT*0.2;
+  if(document.getElementById('edit-ht')) {
+    document.getElementById('edit-ht').textContent = totalHT.toFixed(2)+' euro';
+    document.getElementById('edit-tva').textContent = tva.toFixed(2)+' euro';
+    document.getElementById('edit-ttc').textContent = (totalHT*1.2).toFixed(2)+' euro';
+  }
+}
+
+function afficherEdition(d) {
+  document.getElementById('n-edit').style.display = 'flex';
+  var c = document.getElementById('edit-content');
+  var tarif = parseFloat(cfg.tarif)||75;
+
+  var postesHTML = (d.postes||[]).map(function(p, i) {
+    return '<div style="background:var(--gdp);border:1px solid rgba(255,255,255,.1);border-radius:var(--rs);padding:12px;margin-bottom:10px">'
+      +'<div style="font-size:14px;font-weight:600;margin-bottom:4px;color:var(--gl)">'+p.nom+'</div>'
+      +'<div style="font-size:12px;color:var(--g4);margin-bottom:10px">'+p.detail+'</div>'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">'
+      +'<div>'
+      +'<label style="display:block;font-size:11px;color:var(--g4);margin-bottom:4px;text-transform:uppercase">Heures MO</label>'
+      +'<input type="number" id="mo-h-'+i+'" value="'+Number(p.mo_heures||0).toFixed(2)+'" step="0.25" min="0" oninput="recalcPoste('+i+')" style="width:100%;background:rgba(255,255,255,.08);border:1px solid rgba(90,158,93,.4);border-radius:6px;padding:8px;color:var(--w);font-size:15px;font-family:Barlow,sans-serif">'
+      +'<div style="font-size:11px;color:var(--gl);margin-top:4px">= <span id="mo-c-'+i+'">'+Number(p.mo_cout||0).toFixed(0)+' euro</span></div>'
+      +'</div>'
+      +'<div>'
+      +'<label style="display:block;font-size:11px;color:var(--g4);margin-bottom:4px;text-transform:uppercase">Fourniture HT</label>'
+      +'<input type="number" id="fo-c-'+i+'" value="'+Number(p.fourniture_cout||0).toFixed(0)+'" step="1" min="0" oninput="recalcPoste('+i+')" style="width:100%;background:rgba(255,255,255,.08);border:1px solid rgba(245,159,10,.4);border-radius:6px;padding:8px;color:var(--w);font-size:15px;font-family:Barlow,sans-serif">'
+      +(p.fourniture_detail?'<div style="font-size:11px;color:var(--amb);margin-top:4px">'+p.fourniture_detail+'</div>':'')
+      +'</div>'
+      +'</div>'
+      +'<div style="display:flex;justify-content:space-between;border-top:1px solid rgba(255,255,255,.08);padding-top:8px">'
+      +'<span style="font-size:13px;color:var(--g4)">Total poste</span>'
+      +'<span style="font-size:16px;font-weight:700;color:var(--w)" id="tot-'+i+'">'+Number(p.total||0).toFixed(0)+' euro</span>'
+      +'</div></div>';
+  }).join('');
+
+  var totalHT = (d.postes||[]).reduce(function(s,p){return s+Number(p.total||0);},0);
+
+  c.innerHTML = ''
+    +'<div style="background:var(--gdp);border:1px solid rgba(255,255,255,.07);border-radius:var(--r);padding:14px;margin-bottom:12px">'
+    +'<div style="font-family:Barlow Condensed,sans-serif;font-size:13px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--gl);margin-bottom:4px">Validation du devis</div>'
+    +'<div style="font-size:12px;color:var(--g4)">'+d._client+' — '+d._ville+'</div>'
+    +'<div style="font-size:12px;color:var(--g4);margin-top:4px">'+d.analyse+'</div>'
+    +'</div>'
+    +'<div style="font-size:12px;color:var(--g4);margin-bottom:10px;padding:8px;background:rgba(90,158,93,.08);border-radius:8px">Modifiez les heures MO et le cout fourniture avant validation.</div>'
+    +postesHTML
+    +'<div style="background:rgba(44,95,46,.15);border:1px solid rgba(90,158,93,.3);border-radius:var(--r);padding:14px;margin-bottom:12px">'
+    +'<div style="display:flex;justify-content:space-between;font-size:14px;padding:4px 0;color:var(--g4)"><span>Total HT</span><span id="edit-ht">'+totalHT.toFixed(2)+' euro</span></div>'
+    +'<div style="display:flex;justify-content:space-between;font-size:14px;padding:4px 0;color:var(--g4)"><span>TVA 20%</span><span id="edit-tva">'+(totalHT*.2).toFixed(2)+' euro</span></div>'
+    +'<div style="display:flex;justify-content:space-between;font-family:Barlow Condensed,sans-serif;font-size:22px;font-weight:700;color:var(--w);padding-top:8px;margin-top:4px;border-top:1px solid rgba(255,255,255,.15)"><span>Total TTC</span><span id="edit-ttc">'+(totalHT*1.2).toFixed(2)+' euro</span></div>'
+    +'</div>'
+    +'<button class="btn bp" onclick="validerDevis()">Valider ce devis</button>'
+    +"<button class=\"btn bo\" onclick=\"goNew()\">Recommencer</button>";
+}
+
+function validerDevis() {
+  if (!cur) return;
+  // Relire toutes les valeurs modifiees
+  var tarif = parseFloat(cfg.tarif)||75;
+  var totalHT = 0;
+  (cur.postes||[]).forEach(function(p, i) {
+    var moH = parseFloat(document.getElementById('mo-h-'+i).value)||0;
+    var foC = parseFloat(document.getElementById('fo-c-'+i).value)||0;
+    p.mo_heures = moH;
+    p.mo_cout = Math.round(moH * tarif);
+    p.fourniture_cout = foC;
+    p.total = p.mo_cout + foC;
+    totalHT += p.total;
+  });
+  cur.total_ht = parseFloat(totalHT.toFixed(2));
+  cur.tva = parseFloat((totalHT*0.2).toFixed(2));
+  cur.total_ttc = parseFloat((totalHT*1.2).toFixed(2));
+
+  // Mettre a jour dans l'historique
+  var idx = hist.findIndex(function(d){return d._id===cur._id;});
+  if(idx>=0) hist[idx]=cur;
+  fetch(PROXY+'/api/devis/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(cur)}).catch(function(){});
+
+  afficherDevis(cur);
+  showTab('result');
+  showT('Devis valide !');
+}
+
 // ── SETTINGS ──
 function loadCfg() {
   if(cfg.nom)document.getElementById('sn').value=cfg.nom;
@@ -670,6 +785,8 @@ async function clearAll() {
 }
 
 // ── UTILS ──
+function goNew(){showTab('new');}
+function goResult(){showTab('result');}
 function updateHC(){ document.getElementById('hc').textContent=hist.length+' devis'; }
 function showL(m){ document.getElementById('lo').classList.add('active'); document.querySelector('.lt').textContent=m; }
 function setLS(s){ document.getElementById('ls').textContent=s; }
