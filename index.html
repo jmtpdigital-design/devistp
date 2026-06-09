@@ -407,33 +407,19 @@ async function genererDevis() {
     +'"difficulte":"Facile|Moderee|Difficile",'
     +'"postes":['
     +'  {"nom":"Transfert et installation",'
-    +'   "detail":"amene repli mini pelle 2T5 - '+distC+'km",'
+    +'   "detail":"amene repli '+distC+'km",'
     +'   "mo_heures":1,"mo_cout":'+coutTrans+',"fourniture_detail":"","fourniture_cout":0,'
-    +'   "fiche_technique":null,"total":'+coutTrans+'}'
+    +'   "fiche_tech":"","total":'+coutTrans+'}'
     +'],'
     +'"total_ht":0,"tva":0,"total_ttc":0,'
     +'"conseils":["conseil pratique 1","conseil pratique 2"],'
     +'"flux_prompt":"detailed realistic Flux AI inpainting prompt describing the finished '+data.type+' result: specific materials texture, perspective matching the original photo, natural lighting, professional earthwork finish, photorealistic style, no people"}'
-    +' REGLES STRICTES:'
-    +' 1. Max 6 postes'
-    +' 2. TVA 20%'
-    +' 3. total de chaque poste = mo_cout + fourniture_cout'
-    +' 4. total_ht = somme des totaux postes'
-    +' 5. Inclure fiche_technique pour chaque poste avec fourniture (norme, granulometrie, usage, portance, drainage)'
-    +' 6. Prix fournitures: recherche les vrais prix marche Isere 2025, pas des estimations generiques'
-    +' 7. flux_prompt: prompt detaille pour Flux AI inpainting en anglais. DOIT preciser:'
-    +' - PRESERVE (garder intact): batiments, murs, clotures, vehicules, arbres, ciel, elements verticaux'
-    +' - REPLACE (remplacer uniquement): zone sol/terrain visible, surface au sol'
-    +' - NEW SURFACE: texture precise du materiau final (ex: compacted crushed gravel 0/20, grey-beige color,'
-    +' flat leveled surface, subtle tire tracks, realistic aggregate texture, slight moisture sheen)'
-    +' - LIGHTING: conserver leclairage et les ombres de la photo originale'
-    +' - STYLE: photorealistic, construction site, professional earthwork, no people, same camera angle'
-    +' Exemple: "Inpainting: PRESERVE all vertical elements (building walls, pillars, vehicles, trees, sky).'
-    +' REPLACE ONLY the ground surface area with: freshly compacted '+data.type+' finished surface,'
-    +' realistic '+data.sol+' material texture, flat and level, professional TP finish,'
-    +' matching original photo perspective and lighting, photorealistic"';
+    +' REGLES: max 6 postes, TVA 20%, total_poste=mo_cout+fourniture_cout, total_ht=somme totaux.'
+    +' fiche_tech: string courte norme+usage (uniquement pour postes avec fourniture).'
+    +' flux_prompt EN ANGLAIS: PRESERVE buildings/walls/vehicles/trees/sky. REPLACE ONLY ground surface with: '
+    +data.type+' finished, compacted '+data.sol+' texture, flat professional finish, same photo perspective and lighting, photorealistic, no people.'
   try {
-    var resp = await fetch(PROXY+'/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1500,system:'You are a JSON API. Always respond with raw JSON only, no markdown.',messages:[{role:'user',content:prompt}]})});
+    var resp = await fetch(PROXY+'/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:4000,system:'You are a JSON API. Always respond with raw JSON only, no markdown.',messages:[{role:'user',content:prompt}]})});
     var d2 = await resp.json();
     // Extraire uniquement les blocs text (ignorer tool_use, tool_result)
     var txt = (d2.content||[])
@@ -637,7 +623,12 @@ async function supD(id,e) {
 
 // ── ONGLET ACHATS ──
 function ficheHTML(f) {
-  if (!f || typeof f !== 'object') return '';
+  if (!f) return '';
+  // Support string ou objet
+  if (typeof f === 'string' && f.length > 0) {
+    return '<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:8px 10px;margin-top:8px;font-size:12px;color:var(--g4)">'+f+'</div>';
+  }
+  if (typeof f !== 'object') return '';
   var html = '<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:10px;margin-top:8px">';
   html += '<div style="font-size:11px;font-weight:600;color:var(--g4);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Fiche technique</div>';
   if (f.norme) html += '<div style="font-size:12px;margin-bottom:3px"><span style="color:var(--g4)">Norme: </span><span style="color:var(--w)">'+f.norme+'</span></div>';
@@ -671,7 +662,7 @@ function renderAchats() {
         +'<div style="display:flex;justify-content:space-between;align-items:center">'
         +'<a href="tel:'+carr.tel+'" style="font-size:13px;color:var(--amb);text-decoration:none;font-weight:600">'+carr.tel+'</a>'
         +'<span style="font-size:11px;color:var(--g4)">'+distInfo+'</span></div></div>'
-        +(p.fiche_technique ? ficheHTML(p.fiche_technique) : '')
+        +(p.fiche_tech ? ficheHTML(p.fiche_tech) : '')
         +'</div>';
     }
     if(mc>0) {
