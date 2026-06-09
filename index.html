@@ -7,12 +7,12 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="DevisTP">
-<title>DevisTP — Terrassement</title>
+<title>DevisTP</title>
 <link rel="manifest" href="manifest.json">
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
-:root{--gd:#0f1a0f;--gdp:#1a2e1a;--g:#2c5f2e;--gm:#3d7a40;--gl:#5a9e5d;--amber:#f59f0a;--w:#fff;--g4:#9ca3af;--g8:#1f2937;--red:#dc2626;--r:12px;--rs:8px}
+:root{--gd:#0f1a0f;--gdp:#1a2e1a;--g:#2c5f2e;--gm:#3d7a40;--gl:#5a9e5d;--amb:#f59f0a;--w:#fff;--g4:#9ca3af;--g8:#1f2937;--red:#dc2626;--r:12px;--rs:8px}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{font-family:'Barlow',sans-serif;background:var(--gd);color:var(--w);min-height:100vh;overflow-x:hidden}
 #splash{position:fixed;inset:0;background:var(--gd);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;transition:opacity .5s}
@@ -39,11 +39,8 @@ header h1 span{color:var(--gl)}
 .pa{display:flex;justify-content:space-between;align-items:center;padding:8px 10px}
 .pbs{display:flex;gap:10px;justify-content:center;margin-top:12px}
 .pb{border:none;color:var(--w);padding:10px 16px;border-radius:10px;font-family:'Barlow',sans-serif;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px}
-.pbc{background:var(--g)}
-.pbg{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2)!important}
-.pch{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.2);color:var(--w);padding:5px 12px;border-radius:8px;font-size:12px;font-family:'Barlow',sans-serif;cursor:pointer}
-.pl{font-size:14px;color:var(--g4);margin-bottom:4px}
 .pbdg{background:rgba(44,95,46,.9);color:var(--gl);font-size:11px;font-weight:600;padding:4px 12px;border-radius:20px}
+.pch{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.2);color:var(--w);padding:5px 12px;border-radius:8px;font-size:12px;font-family:'Barlow',sans-serif;cursor:pointer}
 .fg{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .fg2{margin-bottom:10px}
 .fg2 label{display:block;font-size:12px;color:var(--g4);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px}
@@ -60,7 +57,7 @@ header h1 span{color:var(--gl)}
 .btn:active{transform:scale(.97)}
 .bp{background:var(--g);color:var(--w)}
 .bp:disabled{opacity:.4}
-.ba{background:var(--amber);color:var(--g8)}
+.ba{background:var(--amb);color:var(--g8)}
 .bo{background:transparent;border:1px solid rgba(255,255,255,.2);color:var(--w)}
 .bd{background:var(--red);color:var(--w)}
 .bsm{width:auto;padding:8px 16px;font-size:13px;margin-bottom:0}
@@ -76,7 +73,7 @@ header h1 span{color:var(--gl)}
 .bgs{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
 .bg{font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px}
 .bgg{background:rgba(255,255,255,.2);color:var(--w)}
-.bga{background:var(--amber);color:var(--g8)}
+.bga{background:var(--amb);color:var(--g8)}
 .bgr{background:var(--red);color:var(--w)}
 .ms{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
 .mt{background:var(--gdp);border:1px solid rgba(255,255,255,.07);border-radius:var(--rs);padding:12px 8px;text-align:center}
@@ -94,94 +91,71 @@ header h1 span{color:var(--gl)}
 .ci{display:flex;gap:8px;padding:6px 0;font-size:13px;color:var(--g4)}
 .ci::before{content:'→';color:var(--gl);flex-shrink:0}
 .rb{background:rgba(245,159,10,.08);border:1px solid rgba(245,159,10,.25);border-radius:var(--r);padding:14px;margin-bottom:8px}
-.rtl{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;color:var(--amber);margin-bottom:6px}
-.rdc{font-size:13px;color:var(--g4);margin-bottom:12px;line-height:1.5}
 .hi{background:var(--gdp);border:1px solid rgba(255,255,255,.07);border-radius:var(--r);padding:14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
 .hty{font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:700}
 .hd{font-size:12px;color:var(--g4);margin-top:2px}
 .htt{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;color:var(--gl)}
-.es{text-align:center;padding:48px 16px;color:var(--g4)}
-.ei{font-size:48px;margin-bottom:12px;opacity:.4}
+.es{text-align:center;padding:48px 16px;color:var(--g4);font-size:15px}
 .toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--g);color:var(--w);padding:10px 20px;border-radius:24px;font-size:14px;font-weight:500;opacity:0;transition:all .3s;z-index:200;white-space:nowrap}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 .bn{position:fixed;bottom:0;left:0;right:0;background:var(--gdp);border-top:1px solid rgba(255,255,255,.08);display:flex;padding-bottom:env(safe-area-inset-bottom);z-index:50}
-.bn button{flex:1;padding:10px 4px 8px;background:none;border:none;color:var(--g4);font-family:'Barlow',sans-serif;font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;transition:color .15s}
-.bn button svg{width:22px;height:22px}
+.bn button{flex:1;padding:10px 2px 8px;background:none;border:none;color:var(--g4);font-family:'Barlow',sans-serif;font-size:9px;font-weight:500;text-transform:uppercase;letter-spacing:.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;transition:color .15s}
+.bn button svg{width:20px;height:20px}
 .bn button.active{color:var(--gl)}
 </style>
 </head>
 <body>
-<div id="splash">
-  <div class="logo">Devis<span>TP</span></div>
-  <div class="sub">Terrassement · VRD · Isère</div>
-  <div class="bar"><div class="bf"></div></div>
-</div>
-<div class="lo" id="lo">
-  <div class="sp"></div>
-  <div class="lt">Génération en cours...</div>
-  <div class="ls" id="ls">Analyse du chantier</div>
-</div>
+<div id="splash"><div class="logo">Devis<span>TP</span></div><div class="sub">Terrassement · VRD · Isère</div><div class="bar"><div class="bf"></div></div></div>
+<div class="lo" id="lo"><div class="sp"></div><div class="lt">Generation...</div><div class="ls" id="ls">Analyse</div></div>
 <div class="toast" id="toast"></div>
 <div id="app">
-  <header>
-    <h1>Devis<span>TP</span></h1>
-    <div class="hc" id="hc">0 devis</div>
-  </header>
+  <header><h1>Devis<span>TP</span></h1><div class="hc" id="hc">0 devis</div></header>
   <div class="cw">
-
-    <!-- NOUVEAU DEVIS -->
     <div class="sc active" id="sc-new">
       <div class="card">
-        <div class="ct">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
-          Photo du terrain
-        </div>
+        <div class="ct">Photo du terrain</div>
         <div class="pz" id="pz">
           <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="rgba(90,158,93,0.5)" stroke-width="1.5" style="margin-bottom:8px"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
-          <div class="pl">Photo du terrain</div>
+          <div style="font-size:14px;color:var(--g4);margin-bottom:4px">Photo du terrain</div>
           <div class="pbs">
-            <button class="pb pbc" onclick="document.getElementById('ic').click()">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
-              Appareil photo
-            </button>
-            <button class="pb pbg" onclick="document.getElementById('ig').click()">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
-              Galerie
-            </button>
+            <button class="pb" style="background:var(--g)" onclick="document.getElementById('ic').click()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>Appareil photo</button>
+            <button class="pb" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2)" onclick="document.getElementById('ig').click()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>Galerie</button>
           </div>
         </div>
         <input type="file" id="ic" accept="image/*" capture="environment" style="display:none" onchange="handlePhoto(event)">
         <input type="file" id="ig" accept="image/*" style="display:none" onchange="handlePhoto(event)">
       </div>
-
+      <div class="card" id="carr-card" style="display:none">
+        <div class="ct">Carrieres a proximite</div>
+        <div id="carr-liste" style="font-size:13px;color:var(--g4)">Entrez la ville du chantier...</div>
+      </div>
       <div class="card">
         <div class="ct">Chantier</div>
-        <div class="fg2">
-          <label>Type de travaux</label>
+        <div class="fg2"><label>Type de travaux</label>
           <select id="tt">
-            <option value="création d'accès garage">Accès garage / entrée</option>
-            <option value="terrassement général">Terrassement général</option>
-            <option value="création de mare">Création de mare</option>
+            <option value="creation acces garage">Acces garage / entree</option>
+            <option value="terrassement general">Terrassement general</option>
+            <option value="creation mare">Creation de mare</option>
             <option value="drainage VRD">Drainage / VRD</option>
             <option value="nivellement terrain">Nivellement terrain</option>
-            <option value="tranchée réseaux">Tranchée réseaux</option>
-            <option value="assainissement individuel">Assainissement</option>
+            <option value="tranchee reseaux">Tranchee reseaux</option>
+            <option value="assainissement">Assainissement</option>
             <option value="plateforme parking">Plateforme / parking</option>
           </select>
         </div>
         <div class="fg">
-          <div class="fg2"><label>Surface (m²)</label><input type="number" id="su" inputmode="numeric" placeholder="ex: 90" oninput="uc()"></div>
-          <div class="fg2"><label>Profondeur (m)</label><input type="number" id="pr" inputmode="decimal" placeholder="ex: 0.20" step="0.05" oninput="uc()"></div>
+          <div class="fg2"><label>Surface (m2)</label><input type="number" id="su" inputmode="numeric" placeholder="ex: 90" oninput="uc()"></div>
+          <div class="fg2"><label>Profondeur (m)</label><input type="number" id="pr2" inputmode="decimal" placeholder="ex: 0.30" step="0.05" oninput="uc()"></div>
           <div class="fg2"><label>Type de sol</label>
             <select id="ts">
-              <option value="terre végétale">Terre végétale</option>
+              <option value="terre vegetale">Terre vegetale</option>
               <option value="argile limon">Argile / limon</option>
               <option value="mixte gravats" selected>Mixte / gravats</option>
               <option value="grave sable">Grave / sable</option>
               <option value="rocheux">Rocheux / dur</option>
             </select>
           </div>
-          <div class="fg2"><label>Accès engin</label>
+          <div class="fg2"><label>Acces engin</label>
             <select id="ac">
               <option value="facile +3m">Facile (+3m)</option>
               <option value="moyen 2-3m">Moyen (2-3m)</option>
@@ -189,467 +163,494 @@ header h1 span{color:var(--gl)}
             </select>
           </div>
         </div>
-        <div class="fg2"><label>Évacuation terres</label>
+        <div class="fg2"><label>Evacuation terres</label>
           <select id="ev">
-            <option value="régalage sur place">Régalage sur place</option>
-            <option value="déplacement sur site camion benne" selected>Déplacement sur site (camion benne)</option>
-            <option value="évacuation en décharge">Évacuation décharge</option>
-            <option value="à charge du client">À charge client</option>
+            <option value="regalage sur place">Regalage sur place</option>
+            <option value="deplacement sur site camion benne" selected>Deplacement sur site (camion)</option>
+            <option value="evacuation decharge">Evacuation decharge</option>
+            <option value="a charge client">A charge client</option>
           </select>
         </div>
         <div class="cr" id="cr" style="display:none">
-          <div class="cb"><div class="cv" id="csv">—</div><div class="cl">Surface m²</div></div>
-          <div class="cb"><div class="cv" id="cvol">—</div><div class="cl">Volume m³</div></div>
-          <div class="cb"><div class="cv" id="cfoi">—</div><div class="cl">Foisonné m³</div></div>
+          <div class="cb"><div class="cv" id="csv">-</div><div class="cl">Surface m2</div></div>
+          <div class="cb"><div class="cv" id="cvol">-</div><div class="cl">Volume m3</div></div>
+          <div class="cb"><div class="cv" id="cfoi">-</div><div class="cl">Foisonne m3</div></div>
         </div>
       </div>
-
-      <div class="card" id="carrieres-card" style="display:none">
-        <div class="ct">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-          Carrières à proximité
-        </div>
-        <div id="carrieres-liste" style="font-size:13px;color:var(--g4)">Entrez la ville du chantier...</div>
-      </div>
-
       <div class="card">
         <div class="ct">Informations</div>
-        <div class="fg2"><label>Description / contraintes</label><textarea id="de" placeholder="Seuil garage à respecter, matériaux déjà livrés..."></textarea></div>
+        <div class="fg2"><label>Description / contraintes</label><textarea id="de" placeholder="Seuil garage a respecter, materiaux deja livres..."></textarea></div>
         <div class="fg">
           <div class="fg2"><label>Nom client</label><input type="text" id="nc" placeholder="M. Dupont"></div>
-          <div class="fg2"><label>Ville / Adresse chantier</label><input type="text" id="vc" placeholder="Crolles, 38920" oninput="rechercherCarrieres()"></div>
+          <div class="fg2"><label>Ville chantier</label><input type="text" id="vc" placeholder="Crolles, 38920" oninput="rechercherCarrieres()"></div>
         </div>
       </div>
-
       <button class="btn bp" id="bg" onclick="genererDevis()">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-        Générer le devis estimatif
+        Generer le devis estimatif
       </button>
     </div>
-
-    <!-- RÉSULTAT -->
     <div class="sc" id="sc-result"><div id="rc"></div></div>
-
-    <!-- HISTORIQUE -->
     <div class="sc" id="sc-history"><div id="hcon"></div></div>
-
-    <!-- ACHATS -->
     <div class="sc" id="sc-achats"><div id="achats-content"></div></div>
-
-    +"<div style=\"font-family:Barlow Condensed,sans-serif;font-size:13px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--gl);margin-bottom:4px\">MAIN OEUVRE — "+d._type+"</div>"
     <div class="sc" id="sc-mo"><div id="mo-content"></div></div>
-
-    <!-- PARAMÈTRES -->
     <div class="sc" id="sc-settings">
       <div class="card">
         <div class="ct">Mon entreprise</div>
         <div class="fg2"><label>Nom / Raison sociale</label><input type="text" id="sn" placeholder="Terrassement Dupont"></div>
-        <div class="fg2"><label>Téléphone</label><input type="tel" id="st" placeholder="06 XX XX XX XX"></div>
-        <div class="fg2"><label>Adresse</label><input type="text" id="sa" placeholder="Haut Bréda, 38580"></div>
+        <div class="fg2"><label>Telephone</label><input type="tel" id="st" placeholder="06 XX XX XX XX"></div>
+        <div class="fg2"><label>Adresse</label><input type="text" id="sa" placeholder="Haut Breda, 38580"></div>
         <div class="fg2"><label>SIRET</label><input type="text" id="ss" placeholder="XXX XXX XXX XXXXX"></div>
-        <div class="fg2"><label>Taux horaire (€/h)</label><input type="number" id="sh" placeholder="75" value="75"></div>
+        <div class="fg2"><label>Taux horaire (euro/h)</label><input type="number" id="sh" placeholder="75" value="75"></div>
         <button class="btn bp" onclick="saveSt()">Enregistrer</button>
       </div>
       <div class="card">
-        <div class="ct">Données</div>
+        <div class="ct">Donnees</div>
         <p style="font-size:13px;color:var(--g4);margin-bottom:12px">Supprimer tous les devis.</p>
         <button class="btn bd bsm" onclick="clearAll()">Tout supprimer</button>
       </div>
     </div>
   </div>
-
   <div class="bn">
-    <button class="active" id="n-new" onclick="ss('new')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>Nouveau
-    </button>
-    <button id="n-result" onclick="ss('result')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Devis
-    </button>
-    <button id="n-history" onclick="ss('history')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>Historique
-    </button>
-    <button id="n-achats" onclick="ss('achats')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>Achats
-    </button>
-    <button id="n-mo" onclick="ss('mo')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>MO
-    </button>
-    <button id="n-settings" onclick="ss('settings')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>Réglages
-    </button>
+    <button class="active" id="n-new" onclick="showTab('new')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>Nouveau</button>
+    <button id="n-result" onclick="showTab('result')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Devis</button>
+    <button id="n-history" onclick="showTab('history')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>Historique</button>
+    <button id="n-achats" onclick="showTab('achats')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>Achats</button>
+    <button id="n-mo" onclick="showTab('mo')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>MO</button>
+    <button id="n-settings" onclick="showTab('settings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>Reglages</button>
   </div>
 </div>
-
 <script>
-const PROXY='https://devistp-proxy.onrender.com';
-let photo=null,cur=null,hist=[],cfg=JSON.parse(localStorage.getItem('cfg')||'{}');
+const PROXY = 'https://devistp-proxy.onrender.com';
+const BASE_LAT = 45.3833, BASE_LNG = 6.1167;
+let photo = null, cur = null, hist = [], cfg = JSON.parse(localStorage.getItem('cfg') || '{}');
+let chantierLat = null, chantierLng = null, carrieresList = [];
 
-window.addEventListener('load',()=>{
-  setTimeout(()=>{
-    document.getElementById('splash').style.opacity='0';
-    setTimeout(()=>{
-      document.getElementById('splash').style.display='none';
-      const a=document.getElementById('app');
-      a.style.display='flex';a.style.flexDirection='column';
-      loadCfg();loadCloud();
-    },500);
-  },1400);
-});
-if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
+const CARRIERES_DB = [
+  { nom:'Carriere Pontcharra (Lafarge)', lat:45.427, lng:6.022, tel:'04 76 97 60 00', mat:['tout-venant','grave','gravier','concasse','remblai'] },
+  { nom:'Carriere Allevard',             lat:45.391, lng:6.133, tel:'04 76 97 50 00', mat:['tout-venant','remblai','grave'] },
+  { nom:'Carriere Crolles (Cemex)',      lat:45.285, lng:5.995, tel:'04 76 08 15 00', mat:['grave','sable','beton'] },
+  { nom:'Carriere La Rochette',          lat:45.450, lng:6.100, tel:'04 79 25 51 00', mat:['tout-venant','grave','concasse'] },
+  { nom:'Carriere Goncelin',             lat:45.340, lng:6.000, tel:'04 76 71 80 00', mat:['tout-venant','grave','remblai'] },
+  { nom:'Point P Pontcharra',            lat:45.422, lng:6.020, tel:'04 76 97 10 22', mat:['tuyau','drain','geotextile','sable','ciment','bordurette'] },
+  { nom:'Espace Materiaux Crolles',      lat:45.283, lng:5.992, tel:'04 76 08 12 34', mat:['bordure','bordurette','parpaing'] },
+  { nom:'Beton Chantiers Isere Crolles', lat:45.290, lng:5.998, tel:'04 76 08 08 08', mat:['beton'] },
+  { nom:'Eurovia Isere Grenoble',        lat:45.190, lng:5.720, tel:'04 76 50 10 00', mat:['enrobe'] },
+];
 
-function ss(n){
-  document.querySelectorAll('.sc').forEach(s=>s.classList.remove('active'));
-  document.querySelectorAll('.bn button').forEach(b=>b.classList.remove('active'));
-  document.getElementById('sc-'+n).classList.add('active');
-  document.getElementById('n-'+n).classList.add('active');
-  if(n==='history') renderHist();
-  if(n==='achats') renderAchats();
-  if(n==='mo') renderMO();
+function distKm(la1,ln1,la2,ln2){
+  const R=6371,dLa=(la2-la1)*Math.PI/180,dLn=(ln2-ln1)*Math.PI/180;
+  const a=Math.sin(dLa/2)*Math.sin(dLa/2)+Math.cos(la1*Math.PI/180)*Math.cos(la2*Math.PI/180)*Math.sin(dLn/2)*Math.sin(dLn/2);
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
 }
 
-function handlePhoto(e){
-  const f=e.target.files[0];if(!f)return;
-  const r=new FileReader();
-  r.onload=ev=>{
-    photo=ev.target.result;
-    const z=document.getElementById('pz');
+function coutTransfert(d) {
+  const t = parseFloat(cfg.tarif)||75;
+  return Math.round(d*2*1.5 + t);
+}
+
+function carriereProchePour(type) {
+  const list = carrieresList.length > 0 ? carrieresList : CARRIERES_DB.map(function(c){ return Object.assign({},c,{distChantier:distKm(BASE_LAT,BASE_LNG,c.lat,c.lng)}); }).sort(function(a,b){return a.distChantier-b.distChantier;});
+  return list.find(function(c){ return c.mat.some(function(m){ return type.includes(m)||m.includes(type); }); }) || list[0];
+}
+
+// ── INIT ──
+window.addEventListener('load', function() {
+  setTimeout(function() {
+    document.getElementById('splash').style.opacity = '0';
+    setTimeout(function() {
+      document.getElementById('splash').style.display = 'none';
+      var a = document.getElementById('app');
+      a.style.display = 'flex'; a.style.flexDirection = 'column';
+      loadCfg();
+      loadCloud();
+    }, 500);
+  }, 1400);
+});
+
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(function(){});
+
+// ── NAVIGATION ──
+function showTab(n) {
+  document.querySelectorAll('.sc').forEach(function(s){ s.classList.remove('active'); });
+  document.querySelectorAll('.bn button').forEach(function(b){ b.classList.remove('active'); });
+  document.getElementById('sc-'+n).classList.add('active');
+  document.getElementById('n-'+n).classList.add('active');
+  if (n==='history') renderHist();
+  if (n==='achats') renderAchats();
+  if (n==='mo') renderMO();
+}
+
+// ── PHOTO ──
+function handlePhoto(e) {
+  var f = e.target.files[0]; if (!f) return;
+  var r = new FileReader();
+  r.onload = function(ev) {
+    photo = ev.target.result;
+    var z = document.getElementById('pz');
     z.classList.add('hp');
-    z.innerHTML=`<img src="${photo}" alt="Terrain"><div class="pa"><span class="pbdg">📷 Photo chargée</span><button class="pch" onclick="resetPhoto()">Changer</button></div>`;
+    z.innerHTML = '<img src="'+photo+'" alt="Terrain"><div class="pa"><span class="pbdg">Photo chargee</span><button class="pch" onclick="resetPhoto()">Changer</button></div>';
   };
   r.readAsDataURL(f);
 }
 
-function resetPhoto(){
-  photo=null;
-  ['ic','ig'].forEach(id=>document.getElementById(id).value='');
-  const z=document.getElementById('pz');
+function resetPhoto() {
+  photo = null;
+  ['ic','ig'].forEach(function(id){ document.getElementById(id).value=''; });
+  var z = document.getElementById('pz');
   z.classList.remove('hp');
-  z.innerHTML=`<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="rgba(90,158,93,0.5)" stroke-width="1.5" style="margin-bottom:8px"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg><div class="pl">Photo du terrain</div><div class="pbs"><button class="pb pbc" onclick="document.getElementById('ic').click()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>Appareil photo</button><button class="pb pbg" onclick="document.getElementById('ig').click()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>Galerie</button></div>`;
+  z.innerHTML = '<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="rgba(90,158,93,0.5)" stroke-width="1.5" style="margin-bottom:8px"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg><div style="font-size:14px;color:var(--g4);margin-bottom:4px">Photo du terrain</div><div class="pbs"><button class="pb" style="background:var(--g)" onclick="document.getElementById(\'ic\').click()">Appareil photo</button><button class="pb" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2)" onclick="document.getElementById(\'ig\').click()">Galerie</button></div>';
 }
 
-function uc(){
-  const s=parseFloat(document.getElementById('su').value)||0;
-  const p=parseFloat(document.getElementById('pr').value)||0;
-  const row=document.getElementById('cr');
-  if(s>0){
-    document.getElementById('csv').textContent=s;
-    document.getElementById('cvol').textContent=(s*p).toFixed(1);
-    document.getElementById('cfoi').textContent=(s*p*1.3).toFixed(1);
-    row.style.display='grid';
-  } else row.style.display='none';
+// ── CALCUL AUTO ──
+function uc() {
+  var s=parseFloat(document.getElementById('su').value)||0;
+  var p=parseFloat(document.getElementById('pr2').value)||0;
+  var row=document.getElementById('cr');
+  if(s>0){ document.getElementById('csv').textContent=s; document.getElementById('cvol').textContent=(s*p).toFixed(1); document.getElementById('cfoi').textContent=(s*p*1.3).toFixed(1); row.style.display='grid'; }
+  else row.style.display='none';
 }
 
-async function genererDevis(){
-  const btn=document.getElementById('bg');
-  btn.disabled=true;
-  const tarif=parseFloat(cfg.tarif)||75;
+// ── CARRIERES ──
+async function rechercherCarrieres() {
+  var ville = document.getElementById('vc').value;
+  if (!ville || ville.length < 3) { document.getElementById('carr-card').style.display='none'; return; }
+  try {
+    var resp = await fetch('https://nominatim.openstreetmap.org/search?q='+encodeURIComponent(ville+', France')+'&format=json&limit=1',{headers:{'Accept-Language':'fr'}});
+    var data = await resp.json();
+    if (!data.length) return;
+    chantierLat = parseFloat(data[0].lat);
+    chantierLng = parseFloat(data[0].lon);
+    carrieresList = CARRIERES_DB.map(function(c){ return Object.assign({},c,{distChantier:parseFloat(distKm(chantierLat,chantierLng,c.lat,c.lng).toFixed(1))}); }).sort(function(a,b){return a.distChantier-b.distChantier;});
+    var distC = parseFloat(distKm(BASE_LAT,BASE_LNG,chantierLat,chantierLng).toFixed(1));
+    var cout = coutTransfert(distC);
+    var card = document.getElementById('carr-card');
+    card.style.display = 'block';
+    var html = '<div style="background:rgba(245,159,10,.1);border:1px solid rgba(245,159,10,.3);border-radius:8px;padding:10px;margin-bottom:12px">';
+    html += '<div style="font-size:12px;color:var(--amb);font-weight:600">Distance depuis Haut Breda</div>';
+    html += '<div style="font-size:20px;font-weight:700">'+distC+' km</div>';
+    html += '<div style="font-size:12px;color:var(--g4)">Transfert estime : <b style="color:var(--amb)">'+cout+' euros</b></div></div>';
+    carrieresList.slice(0,4).forEach(function(c){
+      html += '<div style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06)">';
+      html += '<div style="display:flex;justify-content:space-between"><b style="font-size:13px">'+c.nom+'</b><span style="color:var(--gl);font-weight:700">'+c.distChantier+' km</span></div>';
+      html += '<div style="font-size:11px;color:var(--g4)">'+c.mat.join(', ')+'</div>';
+      html += '<a href="tel:'+c.tel+'" style="font-size:12px;color:var(--amb);text-decoration:none">'+c.tel+'</a></div>';
+    });
+    document.getElementById('carr-liste').innerHTML = html;
+  } catch(e) { console.warn('Geocoding error:', e); }
+}
+
+// ── GENERATION DEVIS ──
+async function genererDevis() {
+  var btn = document.getElementById('bg'); btn.disabled = true;
+  var tarif = parseFloat(cfg.tarif)||75;
+  var surf = parseFloat(document.getElementById('su').value)||0;
+  var prof = parseFloat(document.getElementById('pr2').value)||0;
+  var vol = parseFloat((surf*prof).toFixed(2));
+  var distC = (chantierLat&&chantierLng) ? parseFloat(distKm(BASE_LAT,BASE_LNG,chantierLat,chantierLng).toFixed(1)) : 15;
+  var coutTrans = coutTransfert(distC);
+  var carrNom = carrieresList.length>0 ? carrieresList[0].nom+'('+carrieresList[0].distChantier+'km)' : 'Carriere Pontcharra';
+
   showL('Analyse du chantier...');
 
-  const data={
-    type:document.getElementById('tt').value,
-    sol:document.getElementById('ts').value,
-    surface:document.getElementById('su').value||'90',
-    profondeur:document.getElementById('pr').value||'0.20',
-    acces:document.getElementById('ac').value,
-    evacuation:document.getElementById('ev').value,
-    description:document.getElementById('de').value,
-    client:document.getElementById('nc').value||'Client',
-    ville:document.getElementById('vc').value||'Grésivaudan',
-    tarif
+  var data = {
+    type: document.getElementById('tt').value,
+    sol: document.getElementById('ts').value,
+    surf: surf, prof: prof, vol: vol,
+    acces: document.getElementById('ac').value,
+    evac: document.getElementById('ev').value,
+    desc: document.getElementById('de').value,
+    client: document.getElementById('nc').value||'Client',
+    ville: document.getElementById('vc').value||'Gresivaudan',
+    tarif: tarif
   };
 
-  let imgDesc='';
-  if(photo){
-    setLS('Analyse de la photo...');
-    try{
-      const r=await fetch(PROXY+'/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:300,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:'image/jpeg',data:photo.split(',')[1]}},{type:'text',text:'Analyse ce terrain pour terrassement en 2 phrases courtes : sol, état, accès, contraintes.'}]}]})});
-      const d=await r.json();imgDesc=d.content?.[0]?.text||'';
-    }catch(e){imgDesc='';}
+  var imgDesc = '';
+  if (photo) {
+    setLS('Analyse photo...');
+    try {
+      var r = await fetch(PROXY+'/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:200,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:'image/jpeg',data:photo.split(',')[1]}},{type:'text',text:'Decris ce terrain pour terrassement en 2 phrases: sol, etat, acces, contraintes.'}]}]})});
+      var d = await r.json();
+      imgDesc = (d.content&&d.content[0]) ? d.content[0].text : '';
+    } catch(e) {}
   }
 
-  setLS('Calcul des postes...');
-  const tarif_h = parseFloat(cfg.tarif) || 75;
-  const surf = parseFloat(data.surface) || 0;
-  const prof = parseFloat(data.profondeur) || 0;
-  const vol = parseFloat((surf * prof).toFixed(2));
-  const distChantierVal = (chantierLat && chantierLng) ? parseFloat(distanceKm(BASE_LAT, BASE_LNG, chantierLat, chantierLng).toFixed(1)) : 15;
-  const coutKmAR = parseFloat((distChantierVal * 2 * 1.5).toFixed(0));
-  const carriereNom = carrieresProcheChantier.length > 0 ? carrieresProcheChantier[0].nom : 'Carriere Pontcharra';
+  setLS('Calcul du devis...');
 
-  const prompt = 'Tu es un expert terrassier en Isère. Génère un devis structuré en 3 parties distinctes pour ce chantier :'
-    + ' type=' + data.type
-    + ', sol=' + data.sol
-    + ', surface=' + data.surface + 'm2'
-    + ', profondeur=' + data.profondeur + 'm'
-    + ', volume=' + vol + 'm3'
-    + ', evacuation=' + data.evacuation
-    + ', acces=' + data.acces
-    + (data.description ? ', notes=' + data.description : '')
-    + (imgDesc ? ', photo=' + imgDesc : '')
-    + '. Distance chantier depuis base Haut Breda: ' + distChantierVal + 'km.'
-    + ' Tarif operateur+engin: ' + tarif_h + 'euros/h.'
-    + ' Carriere la plus proche: ' + carriereNom + '.'
-    + ''
-    + ' RÈGLES DE CALCUL DES PRIX FOURNITURES (prix réels carrière Isère 2025):'
-    + ' - Tout-venant 0/31.5: 8-12 euros/T rendu chantier'
-    + ' - Grave 0/20: 12-16 euros/T rendu chantier'
-    + ' - Sable: 15-20 euros/T'
-    + ' - Béton: 90-110 euros/m3'
-    + ' - Géotextile: 1.5-2.5 euros/m2'
-    + ' - Bordurette béton: 3-5 euros/ml fourni'
-    + ' - Transport benne décharge: 150-200 euros/rotation (10m3)'
-    + ' - Transfert engin: ' + coutKmAR + ' euros (aller-retour ' + distChantierVal + 'km x 1.5euros/km)'
-    + ''
-    + ' RÈGLES DE CALCUL MAIN OEUVRE (tarif=' + tarif_h + 'euros/h):'
-    + ' - Transfert et installation: 1h = ' + tarif_h + ' euros'
-    + ' - Décaissage terrain meuble: 40-80 m3/h selon sol'
-    + ' - Décaissage terrain dur/argileux: 20-40 m3/h'
-    + ' - Réglage et mise à niveau: 0.5h pour 30m2'
-    + ' - Mise en oeuvre grave (régalage): 0.3h pour 10T'
-    + ' - Compactage: 0.5h pour 50m2'
-    + ' - Chargement benne: 0.5h par rotation'
-    + ''
-    + ' Réponds UNIQUEMENT en JSON brut sans backticks ni markdown:'
-    + ' {'
-    + '   "analyse": "description courte du chantier",'
-    + '   "volume_m3": ' + vol + ','
-    + '   "difficulte": "Facile|Moderee|Difficile",'
-    + '   "postes": ['
-    + '     {'
-    + '       "nom": "nom du poste",'
-    + '       "detail": "description courte",'
-    + '       "mo_heures": 1.0,'
-    + '       "mo_cout": 75,'
-    + '       "fourniture_detail": "description fourniture ou vide si aucune",'
-    + '       "fourniture_cout": 0,'
-    + '       "total": 75'
-    + '     }'
-    + '   ],'
-    + '   "total_ht": 0,'
-    + '   "tva": 0,'
-    + '   "total_ttc": 0,'
-    + '   "conseils": ["conseil1"],'
-    + '   "flux_prompt": "english inpainting prompt"'
-    + ' }'
-    + ' IMPORTANT: total de chaque poste = mo_cout + fourniture_cout. total_ht = somme de tous les totaux. TVA 20%.'
-    + ' Calcule précisément : pour ' + vol + 'm3 de décaissage à ' + tarif_h + 'euros/h, si le sol est meuble on fait ~60m3/h donc ' + parseFloat((vol/60).toFixed(1)) + 'h = ' + parseFloat((vol/60*tarif_h).toFixed(0)) + ' euros MO.'
-    + ' Max 6 postes. Toujours commencer par Transfert et installation.';
-  try{
-    setLS('Génération IA...');
-    const r=await fetch(PROXY+'/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:2000,system:'You are a JSON API. You ALWAYS respond with raw JSON only, no markdown, no backticks, no explanation. Only valid JSON starting with { and ending with }.',messages:[{role:'user',content:prompt}]})});
-    const d=await r.json();
-    let txt=d.content?.map(i=>i.text||'').join('')||'';
-    // Nettoyage robuste de toutes les balises markdown
-    txt=txt.replace(/\x60\x60\x60json/gi,'').replace(/\x60\x60\x60/g,'').trim();
-    // Extraire uniquement le JSON entre { et }
-    const s=txt.indexOf('{'),e=txt.lastIndexOf('}');
-    if(s===-1||e===-1){
-      console.error('No JSON found in:', txt.substring(0,200));
-      throw new Error('Réponse IA invalide. Réessayez.');
-    }
-    const jsonStr=txt.substring(s,e+1);
-    console.log('Parsing JSON:', jsonStr.substring(0,100));
-    const dv=JSON.parse(jsonStr);
-    dv._date=new Date().toLocaleDateString('fr-FR');
-    dv._type=data.type;dv._client=data.client;dv._ville=data.ville;
-    dv._photo=photo;dv._id=Date.now();
-    cur=dv;hist.unshift(dv);updateHC();
-    fetch(PROXY+'/api/devis/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(dv)}).catch(()=>{});
-    hideL();afficherDevis(dv);ss('result');
-  }catch(e){
+  var prompt = 'Devis terrassement mini pelle 2T5 Isere. Tarif operateur+engin: '+tarif+'euros/h.'
+    +' Chantier: type='+data.type+', sol='+data.sol+', surface='+surf+'m2, profondeur='+prof+'m, volume='+vol+'m3'
+    +', acces='+data.acces+', evacuation='+data.evac
+    +(data.desc?', notes='+data.desc:'')
+    +(imgDesc?', photo='+imgDesc:'')
+    +'. Distance chantier: '+distC+'km. Transfert: '+coutTrans+'euros. Carriere proche: '+carrNom+'.'
+    +' CALCUL PAR POSTE: mo_cout = heures x '+tarif+'. fourniture_cout = prix achat reel materiau (pas MO).'
+    +' total_poste = mo_cout + fourniture_cout.'
+    +' PRIX FOURNITURES REELS: tout-venant 0/31.5 = 10-14euros/T, grave 0/20 = 14-18euros/T, sable = 15-20euros/T.'
+    +' VITESSE MINI PELLE: terrain meuble = 50-70m3/h, argile = 30-50m3/h, rocheux = 10-20m3/h.'
+    +' REGLE: toujours poste "Transfert et installation" en premier avec mo_cout='+coutTrans+' et fourniture_cout=0.'
+    +' Reponds JSON brut sans backticks: {"analyse":"1 phrase","volume_m3":'+vol+',"difficulte":"Facile",'
+    +'"postes":[{"nom":"Transfert et installation","detail":"amene repli mini pelle 2T5","mo_heures":1,"mo_cout":'+coutTrans+',"fourniture_detail":"","fourniture_cout":0,"total":'+coutTrans+'}],'
+    +'"total_ht":0,"tva":0,"total_ttc":0,"conseils":["conseil"],"flux_prompt":"gravel driveway finished"}'
+    +' Max 6 postes. TVA 20%. JSON uniquement.';
+
+  try {
+    var resp = await fetch(PROXY+'/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:1500,system:'You are a JSON API. Always respond with raw JSON only, no markdown.',messages:[{role:'user',content:prompt}]})});
+    var d2 = await resp.json();
+    var txt = (d2.content||[]).map(function(i){return i.text||'';}).join('');
+    txt = txt.replace(/```json/gi,'').replace(/```/g,'').trim();
+    var s = txt.indexOf('{'), e = txt.lastIndexOf('}');
+    if(s===-1||e===-1) throw new Error('Reponse invalide. Reessayez.');
+    var dv = JSON.parse(txt.substring(s,e+1));
+    dv._date = new Date().toLocaleDateString('fr-FR');
+    dv._type = data.type; dv._client = data.client; dv._ville = data.ville;
+    dv._photo = photo; dv._id = Date.now();
+    cur = dv; hist.unshift(dv); updateHC();
+    fetch(PROXY+'/api/devis/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(dv)}).catch(function(){});
+    hideL(); afficherDevis(dv); showTab('result');
+  } catch(e) {
     hideL();
-    document.getElementById('rc').innerHTML=`<div style="background:rgba(220,38,38,.1);border:1px solid rgba(220,38,38,.3);border-radius:12px;padding:16px;margin:16px 0"><div style="font-size:16px;font-weight:600;color:#f87171;margin-bottom:8px">❌ Erreur</div><div style="font-size:13px;color:var(--g4)">${e.message}</div><button class="btn bo" style="margin-top:12px" onclick="ss('new')">← Réessayer</button></div>`;
-    ss('result');
+    document.getElementById('rc').innerHTML = '<div style="background:rgba(220,38,38,.1);border:1px solid rgba(220,38,38,.3);border-radius:12px;padding:16px;margin:16px 0"><div style="font-size:16px;font-weight:600;color:#f87171;margin-bottom:8px">Erreur</div><div style="font-size:13px;color:var(--g4)">'+e.message+'</div><button class="btn bo" style="margin-top:12px" onclick="showTab(\'new\')">Reessayer</button></div>';
+    showTab('result');
   }
-  btn.disabled=false;
+  btn.disabled = false;
 }
 
-function afficherDevis(d){
-  const db=d.difficulte==='Facile'?'bgg':d.difficulte==='Difficile'?'bgr':'bga';
-  const ph=d.postes?.map(p=>{
-    const hasFourniture = p.fourniture_cout && p.fourniture_cout > 0;
-    const hasMO = p.mo_cout && p.mo_cout > 0;
-    const detail_line = (hasMO ? '<span style="font-size:11px;color:var(--g4)">MO: '+Number(p.mo_cout).toFixed(0)+'€</span>' : '')
-      + (hasMO && hasFourniture ? '<span style="font-size:11px;color:var(--g4)"> + </span>' : '')
-      + (hasFourniture ? '<span style="font-size:11px;color:var(--amber)">Fourniture: '+Number(p.fourniture_cout).toFixed(0)+'€</span>' : '');
-    return '<div class="pr">'
-      +'<div style="flex:1"><div class="pn">'+p.nom+'</div>'
-      +'<div class="pd">'+p.detail+'</div>'
-      +(detail_line ? '<div style="margin-top:3px">'+detail_line+'</div>' : '')
-      +'</div>'
-      +'<div style="text-align:right;min-width:80px">'
-      +'<div class="pt">'+Number(p.total).toFixed(0)+' €</div>'
-      +'</div></div>';
+// ── AFFICHER DEVIS ──
+function afficherDevis(d) {
+  var db = d.difficulte==='Facile'?'bgg':d.difficulte==='Difficile'?'bgr':'bga';
+  var ph = (d.postes||[]).map(function(p) {
+    var haMO = p.mo_cout && Number(p.mo_cout)>0;
+    var haF = p.fourniture_cout && Number(p.fourniture_cout)>0;
+    var det = (haMO?'<span style="font-size:11px;color:var(--g4)">MO: '+Number(p.mo_cout).toFixed(0)+'€</span>':'')
+             +(haMO&&haF?'<span style="font-size:11px;color:var(--g4)"> + </span>':'')
+             +(haF?'<span style="font-size:11px;color:var(--amb)">Fourn: '+Number(p.fourniture_cout).toFixed(0)+'€</span>':'');
+    return '<div class="pr"><div style="flex:1"><div class="pn">'+p.nom+'</div><div class="pd">'+p.detail+'</div>'+(det?'<div style="margin-top:3px">'+det+'</div>':'')+'</div><div style="text-align:right;min-width:80px"><div class="pt">'+Number(p.total).toFixed(0)+' €</div></div></div>';
   }).join('')||'';
-
-  const ch=d.conseils?.map(c=>`<div class="ci">${c}</div>`).join('')||'';
-  document.getElementById('rc').innerHTML=`
-    <div class="dhb"><div class="dt">${d._type}</div><div class="dm">${d._client} — ${d._ville} — ${d._date}</div><div class="bgs"><span class="bg bgg">Valable 30 jours</span><span class="bg ${db}">${d.difficulte}</span></div></div>
-    ${d._photo?`<div style="margin-bottom:12px;border-radius:12px;overflow:hidden"><img src="${d._photo}" style="width:100%;max-height:180px;object-fit:cover;display:block"></div>`:''}
-    <p style="font-size:13px;color:var(--g4);margin-bottom:12px;line-height:1.6">${d.analyse}</p>
-    <div class="ms"><div class="mt"><div class="mv">${d.volume_m3}</div><div class="ml">Volume m³</div></div><div class="mt"><div class="mv">${d.difficulte}</div><div class="ml">Difficulté</div></div><div class="mt"><div class="mv">${Number(d.total_ttc).toFixed(0)}€</div><div class="ml">Total TTC</div></div></div>
-    <div class="card"><div class="ct">Détail des postes</div>${ph}<div class="tx" style="margin-top:12px"><div class="tr"><span>Total HT</span><span>${Number(d.total_ht).toFixed(2)} €</span></div><div class="tr"><span>TVA 20%</span><span>${Number(d.tva).toFixed(2)} €</span></div><div class="tf"><span>Total TTC</span><span>${Number(d.total_ttc).toFixed(2)} €</span></div></div></div>
-    ${ch?`<div class="card"><div class="ct">Conseils</div>${ch}</div>`:''}
-    ${d._photo?`<div class="rb"><div class="rtl">🎨 Simulation rendu — Flux IA</div><div class="rdc">Flux IA remplace le sol sur votre photo avec la surface après travaux.</div><div id="rp" style="display:none;text-align:center;padding:16px"><div class="sp" style="margin:0 auto 8px"></div><div style="font-size:13px;color:var(--g4)">Génération en cours... (20-30 sec)</div></div><div id="rr" style="display:none;margin-bottom:12px"><div style="font-size:11px;color:var(--gl);margin-bottom:8px">✅ Rendu généré</div><img id="ri" style="width:100%;border-radius:10px;display:block"><button class="btn bo bsm" style="margin-top:8px" onclick="dlRendu()">📥 Télécharger</button></div><button class="btn ba" id="btnr" onclick="genRendu()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 12l3 3 5-5"/></svg>Générer le rendu IA</button></div>`:''}
-    <button class="btn bp" onclick="exportPDF()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Télécharger PDF</button>
-    <button class="btn bo" onclick="partager()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>Partager</button>
-    <button class="btn bo" onclick="ss('achats')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>Fournitures</button>
-    <button class="btn bo" onclick="ss('mo')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>Main d'oeuvre</button>
-    <button class="btn bo" onclick="ss('new')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>Nouveau devis</button>`;
+  var ch = (d.conseils||[]).map(function(c){ return '<div class="ci">'+c+'</div>'; }).join('');
+  document.getElementById('rc').innerHTML = ''
+    +'<div class="dhb"><div class="dt">'+d._type+'</div><div class="dm">'+d._client+' — '+d._ville+' — '+d._date+'</div><div class="bgs"><span class="bg bgg">30 jours</span><span class="bg '+db+'">'+d.difficulte+'</span></div></div>'
+    +(d._photo?'<div style="margin-bottom:12px;border-radius:12px;overflow:hidden"><img src="'+d._photo+'" style="width:100%;max-height:180px;object-fit:cover;display:block"></div>':'')
+    +'<p style="font-size:13px;color:var(--g4);margin-bottom:12px;line-height:1.6">'+d.analyse+'</p>'
+    +'<div class="ms"><div class="mt"><div class="mv">'+d.volume_m3+'</div><div class="ml">m3</div></div><div class="mt"><div class="mv">'+d.difficulte+'</div><div class="ml">Difficulte</div></div><div class="mt"><div class="mv">'+Number(d.total_ttc).toFixed(0)+'€</div><div class="ml">TTC</div></div></div>'
+    +'<div class="card"><div class="ct">Detail postes</div>'+ph+'<div class="tx" style="margin-top:12px"><div class="tr"><span>Total HT</span><span>'+Number(d.total_ht).toFixed(2)+' €</span></div><div class="tr"><span>TVA 20%</span><span>'+Number(d.tva).toFixed(2)+' €</span></div><div class="tf"><span>Total TTC</span><span>'+Number(d.total_ttc).toFixed(2)+' €</span></div></div></div>'
+    +(ch?'<div class="card"><div class="ct">Conseils</div>'+ch+'</div>':'')
+    +(d._photo?'<div class="rb"><div style="font-family:Barlow Condensed,sans-serif;font-size:18px;font-weight:700;color:var(--amb);margin-bottom:6px">Simulation rendu Flux IA</div><div style="font-size:13px;color:var(--g4);margin-bottom:12px">Flux IA remplace le sol sur votre photo.</div><div id="rp" style="display:none;text-align:center;padding:16px"><div class="sp" style="margin:0 auto 8px"></div><div id="rpmsg" style="font-size:13px;color:var(--g4)">Generation...</div></div><div id="rr" style="display:none;margin-bottom:12px"><div style="font-size:11px;color:var(--gl);margin-bottom:8px">Rendu genere !</div><img id="ri" style="width:100%;border-radius:10px;display:block"></div><button class="btn ba" id="btnr" onclick="genRendu()">Generer le rendu IA</button></div>':'')
+    +'<button class="btn bp" onclick="exportPDF()">Telecharger PDF</button>'
+    +'<button class="btn bo" onclick="partager()">Partager</button>'
+    +'<button class="btn bo" onclick="showTab(\'achats\')">Fournitures</button>'
+    +'<button class="btn bo" onclick="showTab(\'mo\')">Main oeuvre</button>'
+    +'<button class="btn bo" onclick="showTab(\'new\')">Nouveau devis</button>';
 }
 
-async function genRendu(){
-  if(!cur||!cur._photo)return;
+// ── RENDU FLUX ──
+async function genRendu() {
+  if (!cur||!cur._photo) return;
   document.getElementById('rp').style.display='block';
   document.getElementById('rr').style.display='none';
   document.getElementById('btnr').disabled=true;
-  try{
-    const mask=await creerMask(cur._photo);
-    const prompt=cur.flux_prompt||'compacted gravel driveway 0/20, flat clean finished surface, professional earthwork, realistic photo';
-
-    // Soumettre le job — réponse immédiate, pas de timeout
-    setRenduStatus('Envoi de la photo...');
-    const sr=await fetch(PROXY+'/api/inpainting/submit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({image:cur._photo,mask,prompt})});
-    const sd=await sr.json();
-    if(sd.error) throw new Error(sd.error);
-    const rid=sd.request_id;
-    console.log('Job submitted:', rid);
-
-    // Polling côté client — pas de timeout serveur
-    for(let i=0;i<45;i++){
-      await new Promise(r=>setTimeout(r,4000));
-      setRenduStatus('Génération en cours... ('+(i*4+4)+'s)');
-      try{
-        const pr=await fetch(PROXY+'/api/inpainting/status/'+rid);
-        const pd=await pr.json();
-        console.log('Poll '+i+':', pd.status);
-        if(pd.status==='completed'){
+  try {
+    var mask = await creerMask(cur._photo);
+    var prompt = cur.flux_prompt||'compacted gravel driveway 0/20, flat clean finished surface, professional earthwork, realistic photo';
+    setRpMsg('Envoi a Flux IA...');
+    var sr = await fetch(PROXY+'/api/inpainting/submit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({image:cur._photo,mask:mask,prompt:prompt})});
+    var sd = await sr.json();
+    if (sd.error) throw new Error(sd.error);
+    var rid = sd.request_id;
+    for (var i=0; i<45; i++) {
+      await new Promise(function(r){setTimeout(r,4000);});
+      setRpMsg('Generation... ('+(i*4+4)+'s)');
+      try {
+        var pr = await fetch(PROXY+'/api/inpainting/status/'+rid);
+        var pd = await pr.json();
+        if (pd.status==='completed') {
           document.getElementById('rp').style.display='none';
           document.getElementById('rr').style.display='block';
           document.getElementById('ri').src=pd.image;
           cur._rendu=pd.image;
-          showT('Rendu généré ✅');
+          showT('Rendu genere !');
           document.getElementById('btnr').disabled=false;
           return;
         }
-        if(pd.status==='error') throw new Error(pd.error||'Erreur Flux IA');
-        if(pd.queue_position) setRenduStatus('File attente : position '+pd.queue_position+'...');
-      }catch(pe){ console.warn('Poll err:', pe.message); }
+        if (pd.status==='error') throw new Error(pd.error||'Erreur Flux');
+        if (pd.queue_position) setRpMsg('File attente: pos '+pd.queue_position);
+      } catch(pe) { console.warn('Poll:', pe.message); }
     }
-    throw new Error('Timeout — réessayez dans quelques instants');
-  }catch(e){
-    document.getElementById('rp').style.display='none';
-    showT('Erreur : '+e.message);
-  }
+    throw new Error('Timeout');
+  } catch(e) { document.getElementById('rp').style.display='none'; showT('Erreur: '+e.message); }
   document.getElementById('btnr').disabled=false;
 }
 
-function setRenduStatus(msg){
-  const rp=document.getElementById('rp');
-  if(rp) rp.innerHTML='<div class="sp" style="margin:0 auto 8px"></div><div style="font-size:13px;color:var(--g4)">'+msg+'</div>';
-}
+function setRpMsg(m) { var el=document.getElementById('rpmsg'); if(el) el.textContent=m; }
 
-async function creerMask(p){
-  return new Promise(res=>{
-    const img=new Image();
-    img.onload=()=>{
-      const c=document.createElement('canvas');
-      c.width=img.width;c.height=img.height;
-      const ctx=c.getContext('2d');
-      ctx.fillStyle='black';ctx.fillRect(0,0,c.width,c.height);
-      const t=Math.floor(c.height*.42);
-      const g=ctx.createLinearGradient(0,t,0,t+60);
-      g.addColorStop(0,'rgba(255,255,255,0)');g.addColorStop(1,'white');
-      ctx.fillStyle=g;ctx.fillRect(0,t,c.width,60);
-      ctx.fillStyle='white';ctx.fillRect(0,t+60,c.width,c.height-t-60);
+async function creerMask(p) {
+  return new Promise(function(res) {
+    var img = new Image();
+    img.onload = function() {
+      var c = document.createElement('canvas');
+      c.width=img.width; c.height=img.height;
+      var ctx = c.getContext('2d');
+      ctx.fillStyle='black'; ctx.fillRect(0,0,c.width,c.height);
+      var t = Math.floor(c.height*.42);
+      var g = ctx.createLinearGradient(0,t,0,t+60);
+      g.addColorStop(0,'rgba(255,255,255,0)'); g.addColorStop(1,'white');
+      ctx.fillStyle=g; ctx.fillRect(0,t,c.width,60);
+      ctx.fillStyle='white'; ctx.fillRect(0,t+60,c.width,c.height-t-60);
       res(c.toDataURL('image/png'));
-    };img.src=p;
+    };
+    img.src=p;
   });
 }
 
-function renderAchats(){
-  const c=document.getElementById('achats-content');
-  if(!cur){
-    c.innerHTML='<div class="es">Generez un devis dabord.</div>';
-    return;
-  }
-  const d=cur;
+// ── EXPORT PDF ──
+function exportPDF() {
+  if (!cur) return;
+  var d=cur, W=210;
+  var doc=new window.jspdf.jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  doc.setFillColor(44,95,46); doc.rect(0,0,W,28,'F');
+  doc.setTextColor(255,255,255); doc.setFontSize(20); doc.setFont('helvetica','bold');
+  doc.text('DEVIS ESTIMATIF',15,13);
+  doc.setFontSize(9); doc.setFont('helvetica','normal');
+  doc.text(d._type,15,20);
+  doc.text(d._date+' | Valable 30 jours',W-15,20,{align:'right'});
+  doc.setFillColor(240,247,240); doc.roundedRect(13,32,85,22,2,2,'F');
+  doc.setTextColor(44,95,46); doc.setFontSize(8); doc.setFont('helvetica','bold'); doc.text('PRESTATAIRE',16,37);
+  doc.setTextColor(50,50,50); doc.setFont('helvetica','normal');
+  doc.text(cfg.nom||'Votre Entreprise',16,43); doc.text(cfg.adresse||'Haut Breda 38580',16,48); doc.text(cfg.tel||'06.XX.XX.XX.XX',16,53);
+  doc.setFillColor(240,247,240); doc.roundedRect(W/2+2,32,W/2-15,22,2,2,'F');
+  doc.setTextColor(44,95,46); doc.setFont('helvetica','bold'); doc.text('CLIENT',W/2+5,37);
+  doc.setTextColor(50,50,50); doc.setFont('helvetica','normal'); doc.text(d._client,W/2+5,43); doc.text(d._ville,W/2+5,48);
+  doc.setFillColor(232,245,233); doc.roundedRect(13,57,W-26,14,2,2,'F');
+  doc.setTextColor(44,95,46); doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.text('ANALYSE',16,62);
+  doc.setTextColor(80,80,80); doc.setFont('helvetica','normal');
+  doc.text(doc.splitTextToSize(d.analyse||'',W-32).slice(0,2),16,67);
+  var y=76;
+  doc.setFillColor(44,95,46); doc.rect(13,y,W-26,8,'F');
+  doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(8);
+  doc.text('Designation',16,y+5.5); doc.text('P.U. HT',150,y+5.5,{align:'right'}); doc.text('Total HT',W-14,y+5.5,{align:'right'});
+  y+=8;
+  (d.postes||[]).forEach(function(p,i) {
+    if(i%2===0){doc.setFillColor(248,252,248);doc.rect(13,y,W-26,10,'F');}
+    doc.setTextColor(30,30,30); doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.text(p.nom.substring(0,45),16,y+4);
+    doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(100,100,100); doc.text(p.detail.substring(0,55),16,y+8.5);
+    doc.setTextColor(30,30,30); doc.setFontSize(8); doc.text(Number(p.total).toFixed(2)+' €',W-14,y+6,{align:'right'}); y+=10;
+  });
+  y+=5; doc.setFillColor(240,247,240); doc.roundedRect(W/2+5,y,W/2-18,26,2,2,'F');
+  doc.setTextColor(100,100,100); doc.setFont('helvetica','normal'); doc.setFontSize(9);
+  doc.text('Total HT',W/2+9,y+7); doc.text(Number(d.total_ht).toFixed(2)+' €',W-16,y+7,{align:'right'});
+  doc.text('TVA 20%',W/2+9,y+13); doc.text(Number(d.tva).toFixed(2)+' €',W-16,y+13,{align:'right'});
+  doc.setDrawColor(44,95,46); doc.setLineWidth(0.3); doc.line(W/2+9,y+16,W-16,y+16);
+  doc.setTextColor(44,95,46); doc.setFont('helvetica','bold'); doc.setFontSize(12);
+  doc.text('TOTAL TTC',W/2+9,y+23); doc.text(Number(d.total_ttc).toFixed(2)+' €',W-16,y+23,{align:'right'});
+  doc.setFillColor(44,95,46); doc.rect(0,287,W,10,'F');
+  doc.setTextColor(255,255,255); doc.setFont('helvetica','normal'); doc.setFontSize(7);
+  doc.text('Devis estimatif non contractuel - Valable 30 jours',W/2,293,{align:'center'});
+  doc.save('devis_'+d._type.replace(/\s/g,'_')+'_'+d._date.replace(/\//g,'-')+'.pdf');
+  showT('PDF telecharge !');
+}
 
-  const fournitures=[];
-  let totalFournitures=0;
+// ── PARTAGER ──
+async function partager() {
+  if (!cur) return;
+  var d=cur;
+  var t='DEVIS: '+d._type+'\nClient: '+d._client+' - '+d._ville+'\nDate: '+d._date+'\nTotal TTC: '+Number(d.total_ttc).toFixed(2)+' euros\nValable 30 jours.';
+  if (navigator.share) { try { await navigator.share({title:'DevisTP',text:t}); } catch(e) {} }
+  else { navigator.clipboard&&navigator.clipboard.writeText(t); showT('Copie !'); }
+}
 
-  (d.postes||[]).forEach(function(p){
-    if(p.fourniture_cout && Number(p.fourniture_cout) > 0){
-      fournitures.push(p);
-      totalFournitures+=Number(p.fourniture_cout);
+// ── HISTORIQUE ──
+async function loadCloud() {
+  try { var r=await fetch(PROXY+'/api/devis'); if(r.ok){hist=await r.json();updateHC();} } catch(e) {}
+}
+
+async function renderHist() {
+  var c=document.getElementById('hcon');
+  c.innerHTML='<div style="text-align:center;padding:24px;color:var(--g4)"><div class="sp" style="margin:0 auto 8px"></div>Chargement...</div>';
+  await loadCloud();
+  if(!hist.length){c.innerHTML='<div class="es">Aucun devis.<br>Creez votre premier devis !</div>';return;}
+  c.innerHTML=hist.map(function(d,i){
+    return '<div class="hi"><div onclick="voirD('+i+')" style="flex:1;cursor:pointer"><div class="hty">'+d._type+'</div><div class="hd">'+d._client+' — '+d._ville+' — '+d._date+'</div></div><div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:6px"><div class="htt">'+Number(d.total_ttc).toFixed(0)+' €</div><button onclick="supD('+JSON.stringify(d._id)+',event)" style="background:var(--red);border:none;color:white;font-size:10px;padding:3px 8px;border-radius:6px;cursor:pointer">Suppr.</button></div></div>';
+  }).join('');
+}
+
+function voirD(i) { cur=hist[i]; afficherDevis(cur); showTab('result'); }
+
+async function supD(id,e) {
+  e.stopPropagation(); if(!confirm('Supprimer ?'))return;
+  try{await fetch(PROXY+'/api/devis/'+id,{method:'DELETE'});}catch(e){}
+  hist=hist.filter(function(d){return String(d._id)!==String(id);}); updateHC(); renderHist(); showT('Supprime');
+}
+
+// ── ONGLET ACHATS ──
+function renderAchats() {
+  var c=document.getElementById('achats-content');
+  if(!cur){c.innerHTML='<div class="es">Generez un devis dabord.</div>';return;}
+  var d=cur;
+  var totalF=0, lignesF='', lignesM='';
+  (d.postes||[]).forEach(function(p) {
+    var fc=Number(p.fourniture_cout||0);
+    var mc=Number(p.mo_cout||0);
+    if(fc>0) {
+      totalF+=fc;
+      var type=p.nom.toLowerCase();
+      var carr=carriereProchePour(type);
+      var distInfo=carr.distChantier ? carr.distChantier+'km du chantier' : 'distance inconnue';
+      lignesF+='<div style="background:var(--gdp);border:1px solid rgba(255,255,255,.07);border-radius:var(--rs);padding:12px;margin-bottom:8px">'
+        +'<div style="display:flex;justify-content:space-between"><b style="font-size:14px">'+p.nom+'</b><div style="font-size:18px;font-weight:700;color:var(--amb)">'+fc.toFixed(0)+' €</div></div>'
+        +'<div style="font-size:12px;color:var(--g4);margin-top:2px">'+p.fourniture_detail+'</div>'
+        +'<div style="background:rgba(44,95,46,.12);border:1px solid rgba(90,158,93,.25);border-radius:8px;padding:10px;margin-top:8px">'
+        +'<div style="font-size:12px;font-weight:600;color:var(--gl);margin-bottom:4px">'+carr.nom+'</div>'
+        +'<div style="display:flex;justify-content:space-between;align-items:center">'
+        +'<a href="tel:'+carr.tel+'" style="font-size:13px;color:var(--amb);text-decoration:none;font-weight:600">'+carr.tel+'</a>'
+        +'<span style="font-size:11px;color:var(--g4)">'+distInfo+'</span></div></div></div>';
+    }
+    if(mc>0) {
+      lignesM+='<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:13px"><span style="color:var(--g4)">'+p.nom+'</span><span style="font-weight:600">'+mc.toFixed(0)+' €</span></div>';
     }
   });
-
-  const totalHT=Number(d.total_ht);
-  const marge=totalHT-totalFournitures;
-
-  const lignesFournitures=fournitures.map(function(p){
-    const nomLower=(p.nom+' '+p.detail).toLowerCase().replace(/[éèê]/g,'e').replace(/[àâ]/g,'a').replace(/[ôö]/g,'o').replace(/[ùû]/g,'u').replace(/[îï]/g,'i').replace(/[ç]/g,'c');
-    const fournisseur=Object.entries(fournisseurs).find(function(e){return nomLower.includes(e[0]);});
-    const f=fournisseur?fournisseur[1]:null;
-    const fBadge=f?('<div style="background:rgba(44,95,46,.12);border:1px solid rgba(90,158,93,.25);border-radius:8px;padding:10px;margin-top:8px">'
-      +'<div style="font-size:12px;font-weight:600;color:var(--gl);margin-bottom:4px">📍 '+f.nom+'</div>'
-      +'<div style="display:flex;justify-content:space-between;align-items:center">'
-      +'<a href="tel:'+f.tel+'" style="font-size:13px;color:var(--amber);text-decoration:none;font-weight:600">📞 '+f.tel+'</a>'
-      +'<span style="font-size:10px;color:var(--g4)">Appuyer pour appeler</span>'
-      +'</div>'
-      +'<div style="font-size:11px;color:var(--g4);margin-top:4px;font-style:italic">ℹ️ '+f.note+'</div>'
-      +'</div>'):'';
-    return '<div style="background:var(--gdp);border:1px solid rgba(255,255,255,.07);border-radius:var(--rs);padding:12px;margin-bottom:8px">'
-      +'<div style="display:flex;justify-content:space-between;margin-bottom:4px">'
-      +'<div style="flex:1"><b style="font-size:14px">'+p.nom+'</b>'
-      +'<div style="font-size:12px;color:var(--g4)">'+p.fourniture_detail+'</div></div>'
-      +'<div style="text-align:right">'
-      +'<div style="font-size:18px;font-weight:700;color:var(--amber)">'+Number(p.fourniture_cout).toFixed(0)+' €</div>'
-      +'<div style="font-size:11px;color:var(--g4)">fourniture HT</div>'
-      +'</div></div>'+fBadge+'</div>';
-  }).join('');
-
-  const lignesMO=(d.postes||[]).filter(function(p){return !fournitures.includes(p);}).map(function(p){
-    return '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:13px"><span style="color:var(--g4)">'+p.nom+'</span><span style="font-weight:600">'+Number(p.total).toFixed(0)+' €</span></div>';
-  }).join('')||'';
-
-  const htmlHeader='<div style="margin-bottom:12px">'
-    +'<div style="font-family:Barlow Condensed,sans-serif;font-size:13px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--gl);margin-bottom:4px">DEVIS : '+d._type+'</div>'
-    +'<div style="font-size:12px;color:var(--g4)">'+d._client+' — '+d._date+'</div>'
-    +'</div>';
-
-  const htmlMetrics='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px">'
-    +'<div class="cb"><div class="cv">'+Number(d.total_ttc).toFixed(0)+'€</div><div class="cl">Prix client TTC</div></div>'
-    +'<div class="cb" style="border-color:rgba(245,159,10,.3)"><div class="cv" style="color:var(--amber)">'+totalFournitures.toFixed(0)+'€</div><div class="cl">Fournitures HT</div></div>'
+  var totalHT=Number(d.total_ht), marge=totalHT-totalF;
+  c.innerHTML=''
+    +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px">'
+    +'<div class="cb"><div class="cv">'+Number(d.total_ttc).toFixed(0)+'€</div><div class="cl">Client TTC</div></div>'
+    +'<div class="cb" style="border-color:rgba(245,159,10,.3)"><div class="cv" style="color:var(--amb)">'+totalF.toFixed(0)+'€</div><div class="cl">Fournitures HT</div></div>'
     +'<div class="cb" style="border-color:rgba(90,158,93,.5)"><div class="cv">'+marge.toFixed(0)+'€</div><div class="cl">Marge brute HT</div></div>'
-    +'</div>';
+    +'</div>'
+    +'<div class="card"><div class="ct">Fournitures a commander</div>'+(lignesF||'<div style="font-size:13px;color:var(--g4);text-align:center;padding:12px">Aucune fourniture</div>')
+    +(lignesF?'<div style="display:flex;justify-content:space-between;padding:10px 0;border-top:1px solid rgba(255,255,255,.1);font-weight:600"><span>Total fournitures</span><span style="color:var(--amb)">'+totalF.toFixed(0)+' €</span></div>':'')+'</div>'
+    +(lignesM?'<div class="card"><div class="ct">Prestations MO</div>'+lignesM+'</div>':'')
+    +'<button class="btn bo" onclick="showTab(\'result\')">Retour au devis</button>';
+}
 
-  const htmlFournitures='<div class="card">'
-    +'<div class="ct">Fournitures a commander</div>'
-    +(fournitures.length?lignesFournitures:'<div style="font-size:13px;color:var(--g4);text-align:center;padding:12px">Aucune fourniture</div>')
-    +(fournitures.length?'<div style="display:flex;justify-content:space-between;padding:10px 0;margin-top:4px;border-top:1px solid rgba(255,255,255,.1);font-size:15px;font-weight:600"><span>Total fournitures</span><span style="color:var(--amber)">'+totalFournitures.toFixed(0)+' €</span></div>':'')
-    +'</div>';
+// ── ONGLET MO ──
+function renderMO() {
+  var c=document.getElementById('mo-content');
+  if(!cur){c.innerHTML='<div class="es">Generez un devis dabord.</div>';return;}
+  var d=cur, tarif=parseFloat(cfg.tarif)||75;
+  var totalMO=0, totalH=0;
+  (d.postes||[]).forEach(function(p){ totalMO+=Number(p.mo_cout||0); totalH+=Number(p.mo_heures||0); });
+  var lignes=(d.postes||[]).map(function(p){
+    var h=Number(p.mo_heures||0), mc=Number(p.mo_cout||0);
+    var pct=totalMO>0?((mc/totalMO)*100).toFixed(0):0;
+    return '<div style="background:var(--gdp);border:1px solid rgba(255,255,255,.07);border-radius:var(--rs);padding:12px;margin-bottom:8px">'
+      +'<div style="display:flex;justify-content:space-between;margin-bottom:6px">'
+      +'<div><b style="font-size:14px">'+p.nom+'</b><div style="font-size:12px;color:var(--g4)">'+p.detail+'</div></div>'
+      +'<div style="text-align:right"><div style="font-size:18px;font-weight:700;color:var(--gl)">'+mc.toFixed(0)+' €</div><div style="font-size:11px;color:var(--g4)">'+h.toFixed(1)+'h x '+tarif+'€</div></div></div>'
+      +'<div style="background:rgba(255,255,255,.06);border-radius:4px;height:6px;overflow:hidden"><div style="background:var(--gl);height:100%;width:'+pct+'%"></div></div></div>';
+  }).join('');
+  c.innerHTML=''
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px">'
+    +'<div class="cb"><div class="cv">'+totalH.toFixed(1)+'h</div><div class="cl">Temps total</div></div>'
+    +'<div class="cb" style="border-color:rgba(90,158,93,.5)"><div class="cv">'+totalMO.toFixed(0)+'€</div><div class="cl">Total MO HT</div></div>'
+    +'</div>'
+    +'<div class="card"><div class="ct">Detail par poste</div>'+lignes+'</div>'
+    +'<div style="background:rgba(44,95,46,.1);border:1px solid rgba(90,158,93,.2);border-radius:var(--r);padding:12px;margin-bottom:8px">'
+    +'<div style="font-size:12px;color:var(--g4)">Tarif applique</div>'
+    +'<div style="font-size:18px;font-weight:700;color:var(--gl)">'+tarif+' euros/h</div>'
+    +'<div style="font-size:11px;color:var(--g4);margin-top:2px">Operateur + mini pelle 2T5</div></div>'
+    +'<button class="btn bo" onclick="showTab(\'result\')">Retour au devis</button>';
+}
 
-  const htmlMO='<div class="card">'
-    +'<div class="ct">Prestations MO</div>'
-    +lignesMO
-    +'<div style="display:flex;justify-content:space-between;padding:10px 0;margin-top:4px;border-top:1px solid rgba(255,255,255,.1);font-size:15px;font-weight:600"><span>Total prestations</span><span style="color:var(--gl)">'+marge.toFixed(2)+' €</span></div>'
-    +'</div>';
-
-  const htmlRentabilite='<div style="background:rgba(44,95,46,.15);border:1px solid rgba(90,158,93,.3);border-radius:var(--r);padding:14px;margin-bottom:8px">'
-    +'<div style="font-family:Barlow Condensed,sans-serif;font-size:16px;font-weight:700;color:var(--gl);margin-bottom:8px">Rentabilite estimee</div>'
-    +'<div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0;color:var(--g4)"><span>CA facture HT</span><span style="color:var(--w)">'+totalHT.toFixed(2)+' €</span></div>'
-    +'<div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0;color:var(--g4)"><span>Cout fournitures</span><span style="color:var(--amber)">- '+totalFournitures.toFixed(2)+' €</span></div>'
-    +'<div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0;color:var(--g4)"><span>Carburant estime</span><span style="color:var(--amber)">- '+Math.round(Number(d.duree_heures||2)*3)+' €</span></div>'
-    +'<div style="border-top:1px solid rgba(255,255,255,.15);margin-top:6px;padding-top:8px;display:flex;justify-content:space-between;font-family:Barlow Condensed,sans-serif;font-size:18px;font-weight:700"><span>Marge nette estimee</span><span style="color:var(--gl)">'+(marge-Math.round(Number(d.duree_heures||2)*3)).toFixed(0)+' €</span></div>'
-    +'</div>';
-
-  c.innerHTML = htmlHeader + htmlMetrics + htmlFournitures + htmlMO + htmlRentabilite;
-  c.innerHTML += '<button class="btn bo" style="margin-top:8px" onclick="retourDevis()">← Retour devis</button>';
-
-function retourDevis(){ss('result');}
-function loadCfg(){
+// ── SETTINGS ──
+function loadCfg() {
   if(cfg.nom)document.getElementById('sn').value=cfg.nom;
   if(cfg.tel)document.getElementById('st').value=cfg.tel;
   if(cfg.adresse)document.getElementById('sa').value=cfg.adresse;
@@ -657,23 +658,23 @@ function loadCfg(){
   if(cfg.tarif)document.getElementById('sh').value=cfg.tarif;
 }
 
-function saveSt(){
+function saveSt() {
   cfg={nom:document.getElementById('sn').value,tel:document.getElementById('st').value,adresse:document.getElementById('sa').value,siret:document.getElementById('ss').value,tarif:document.getElementById('sh').value||'75'};
-  localStorage.setItem('cfg',JSON.stringify(cfg));showT('Parametres enregistres !');
+  localStorage.setItem('cfg',JSON.stringify(cfg)); showT('Parametres enregistres !');
 }
 
-async function clearAll(){
+async function clearAll() {
   if(!confirm('Supprimer tous les devis ?'))return;
-  for(const d of hist){try{await fetch(PROXY+'/api/devis/'+d._id,{method:'DELETE'});}catch(e){}}
-  hist=[];updateHC();showT('Historique supprime');
+  for(var i=0;i<hist.length;i++){try{await fetch(PROXY+'/api/devis/'+hist[i]._id,{method:'DELETE'});}catch(e){}}
+  hist=[]; updateHC(); showT('Historique supprime');
 }
 
-function updateHC(){document.getElementById('hc').textContent=hist.length+' devis';}
-function showL(m){document.getElementById('lo').classList.add('active');document.querySelector('.lt').textContent=m;}
-function setLS(s){document.getElementById('ls').textContent=s;}
-function hideL(){document.getElementById('lo').classList.remove('active');}
-function showT(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(function(){t.classList.remove('show');},2800);}
-}
+// ── UTILS ──
+function updateHC(){ document.getElementById('hc').textContent=hist.length+' devis'; }
+function showL(m){ document.getElementById('lo').classList.add('active'); document.querySelector('.lt').textContent=m; }
+function setLS(s){ document.getElementById('ls').textContent=s; }
+function hideL(){ document.getElementById('lo').classList.remove('active'); }
+function showT(m){ var t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); setTimeout(function(){t.classList.remove('show');},2800); }
 </script>
 </body>
-</html
+</html>
