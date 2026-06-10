@@ -195,6 +195,90 @@ header h1 span{color:var(--gl)}
     <div class="sc" id="sc-history"><div id="hcon"></div></div>
     <div class="sc" id="sc-achats"><div id="achats-content"></div></div>
     <div class="sc" id="sc-mo"><div id="mo-content"></div></div>
+    <div class="sc" id="sc-creatif">
+      <div class="card">
+        <div class="ct">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          Proposition d'amenagement IA
+        </div>
+        <div style="font-size:13px;color:var(--g4);margin-bottom:14px;line-height:1.5">
+          Prenez une photo du terrain — Flux IA propose un amenagement paysager realiste en conservant les batiments existants.
+        </div>
+
+        <!-- Photo -->
+        <div class="pz" id="pz-creatif">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="rgba(90,158,93,0.5)" stroke-width="1.5" style="margin-bottom:8px"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          <div style="font-size:14px;color:var(--g4);margin-bottom:10px">Photo du terrain a amenager</div>
+          <div class="pbs">
+            <button class="pb" style="background:var(--g)" onclick="document.getElementById('ic-creatif').click()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+              Appareil
+            </button>
+            <button class="pb" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2)" onclick="document.getElementById('ig-creatif').click()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+              Galerie
+            </button>
+          </div>
+        </div>
+        <input type="file" id="ic-creatif" accept="image/*" capture="environment" style="display:none" onchange="handlePhotoCreatif(event)">
+        <input type="file" id="ig-creatif" accept="image/*" style="display:none" onchange="handlePhotoCreatif(event)">
+
+        <!-- Style -->
+        <div class="fg2" style="margin-top:12px">
+          <label>Style d'amenagement</label>
+          <select id="style-creatif">
+            <option value="modern contemporary French style, clean lines, sober landscaping">Contemporain francais</option>
+            <option value="rustic mountain chalet style, natural stone, alpine plants">Chalet montagne</option>
+            <option value="Provencal Mediterranean style, lavender, olive trees, gravel">Provencal mediterraneen</option>
+            <option value="English cottage garden style, lush planting, hedgerows">Jardin anglais</option>
+            <option value="minimalist zen garden style, gravel, bamboo, clean paths">Zen minimaliste</option>
+            <option value="natural wild garden style, native plants, meadow, biodiversity">Jardin naturel sauvage</option>
+          </select>
+        </div>
+
+        <!-- Mots clés -->
+        <div class="fg2">
+          <label>3 mots cles pour orienter le rendu</label>
+          <input type="text" id="mots-creatif" placeholder="ex: piscine, terrasse bois, eclairage" maxlength="60">
+          <div style="font-size:11px;color:var(--g4);margin-top:4px">Separez par des virgules</div>
+        </div>
+
+        <button class="btn ba" id="btn-creatif" onclick="genererCreatif()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          Generer la proposition
+        </button>
+      </div>
+
+      <!-- Résultat -->
+      <div id="creatif-result" style="display:none">
+        <div class="card">
+          <div class="ct" style="color:var(--amb)">Proposition d'amenagement</div>
+          <div id="creatif-progress" style="display:none;text-align:center;padding:20px">
+            <div class="sp" style="margin:0 auto 10px"></div>
+            <div id="creatif-msg" style="font-size:13px;color:var(--g4)">Flux IA en cours...</div>
+          </div>
+          <div id="creatif-images" style="display:none">
+            <div style="margin-bottom:10px">
+              <div style="font-size:12px;color:var(--g4);margin-bottom:6px">Photo originale</div>
+              <img id="creatif-before" style="width:100%;border-radius:10px;display:block">
+            </div>
+            <div style="margin-bottom:12px">
+              <div style="font-size:12px;color:var(--gl);margin-bottom:6px">Proposition amenagement IA</div>
+              <img id="creatif-after" style="width:100%;border-radius:10px;display:block">
+            </div>
+            <div id="creatif-prompt-box" style="background:rgba(255,255,255,.04);border-radius:8px;padding:10px;margin-bottom:12px">
+              <div style="font-size:11px;color:var(--g4);margin-bottom:4px">Prompt utilise</div>
+              <div id="creatif-prompt-text" style="font-size:11px;color:var(--w);line-height:1.5"></div>
+            </div>
+            <button class="btn bo" onclick="dlCreatif()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Telecharger
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="sc" id="sc-settings">
       <div class="card">
         <div class="ct">Mon entreprise</div>
@@ -219,6 +303,9 @@ header h1 span{color:var(--gl)}
     <button id="n-history" onclick="showTab('history')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>Historique</button>
     <button id="n-achats" onclick="showTab('achats')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>Achats</button>
     <button id="n-mo" onclick="showTab('mo')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>MO</button>
+    <button id="n-creatif" onclick="showTab('creatif')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>Creatif
+    </button>
     <button id="n-settings" onclick="showTab('settings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>Reglages</button>
   </div>
 </div>
@@ -380,44 +467,56 @@ async function genererDevis() {
   setLS('Calcul du devis...');
 
   var prompt = 'Tu es un expert en terrassement TP en France, specialise mini pelle 2T5 dans le Gresivaudan (Isere).'
-    +' Chantier a devisser: type='+data.type+', sol='+data.sol+', surface='+surf+'m2, profondeur='+prof+'m'
-    +', volume estimé='+vol+'m3, acces='+data.acces+', evacuation='+data.evac
-    +(data.desc?', notes='+data.desc:'')+(imgDesc?', observation photo='+imgDesc:'')
-    +'. Distance chantier depuis base Haut Breda: '+distC+'km. Carriere proche: '+carrNom+'.'
-    +' VITESSES REELLES DE LA MACHINE (respecter strictement):'
-    +' - Decaissage terrain meuble + chargement benne: 9 m3/h (8 m3/h si travail fin devant batiment ou obstacle)'
-    +' - Decaissage argile ou terrain dur: 6 m3/h'
-    +' - Mise en oeuvre et regalage grave: 10 T/h'
-    +' - Compactage plaque vibrante: inclus dans mise en oeuvre'
-    +' CALCUL MO PAR POSTE:'
-    +' - mo_heures = quantite / vitesse, arrondi au quart dheure superieur (ex: 1.17h -> 1.25h)'
-    +' - mo_cout = mo_heures x '+tarif+' euros/h'
-    +' TRANSFERT: distance='+distC+'km aller-retour='+(distC*2)+'km. Temps chargement/dechargement=1h. mo_heures=1, mo_cout='+coutTrans+'.'
-    +' FOURNITURES - recherche les prix reels du marche Isere 2025 pour:'
-    +' - Tout-venant 0/31.5: prix carriere + livraison selon distance'
-    +' - Grave 0/20: prix carriere + livraison selon distance'
-    +' - Autres materiaux si besoin'
-    +' Pour chaque fourniture, inclure une fiche_technique avec: norme, granulometrie, usage, avantages'
-    +' PROMPT RENDU PHOTO: genere un prompt detaille pour Flux AI inpainting qui decrit precisement'
-    +' le resultat apres travaux de type '+data.type+' avec surface finale en '+data.evac
-    +' (texture realiste, perspective, eclairage naturel, materiaux TP authentiques)'
-    +' Reponds en JSON brut sans markdown:'
-    +' {"analyse":"description precise du chantier et contraintes",'
-    +'"volume_m3":'+vol+','
-    +'"difficulte":"Facile|Moderee|Difficile",'
-    +'"postes":['
-    +'  {"nom":"Transfert et installation",'
-    +'   "detail":"amene repli '+distC+'km",'
-    +'   "mo_heures":1,"mo_cout":'+coutTrans+',"fourniture_detail":"","fourniture_cout":0,'
-    +'   "fiche_tech":"","total":'+coutTrans+'}'
-    +'],'
+    +' CHANTIER: type='+data.type+', sol='+data.sol+', surface='+surf+'m2, profondeur='+prof+'m'
+    +', volume='+vol+'m3, acces='+data.acces+', evacuation='+data.evac
+    +(data.desc?', notes='+data.desc:'')+(imgDesc?', photo='+imgDesc:'')
+    +'. Distance base Haut Breda: '+distC+'km. Carriere proche: '+carrNom+'.'
+
+    +' VITESSES REELLES 2T5 (strictement):'
+    +' terrain meuble: 9m3/h (8 si obstacle/batiment), argile/dur: 6m3/h'
+    +' mise en oeuvre grave: 10T/h compactage inclus'
+    +' mo_heures = quantite/vitesse arrondi quart heure superieur'
+    +' mo_cout = mo_heures x '+tarif+'euros/h'
+
+    +' PRIX MARCHE ISERE 2025 (recherche les vrais prix):'
+    +' - Tout-venant 0/31.5: prix carriere rendu chantier'
+    +' - Grave 0/20: prix carriere rendu chantier'
+    +' - Geotextile 140g/m2: prix fourni pose'
+    +' - Bordurette beton T1: prix ml fourni pose'
+    +' - Sable 0/4: prix T rendu chantier'
+    +' DETAIL PRIX PAR FOURNITURE: prix_unitaire x quantite = sous-total. Indiquer le prix unitaire dans fourniture_detail.'
+
+    +' REGLES POSTES OBLIGATOIRES:'
+    +' 1. Toujours: Transfert et installation en premier (mo_cout='+coutTrans+', fourniture_cout=0)'
+    +' 2. Si decaissage: poste Decaissage avec calcul exact '+vol+'m3/vitesse'
+    +' 3. Si grave ou tout-venant mentionne ou recommande: creer le poste fourniture avec PRIX DETAILLE'
+    +' 4. REGLE CRITIQUE: si tu mentionnes geotextile, bordurette, sable, ou tout materiau dans les conseils,'
+    +' tu DOIS creer un poste dedie avec fourniture_cout calcule (quantite x prix unitaire).'
+    +' Ne jamais mettre un materiau en conseil sans le mettre aussi en poste du devis.'
+    +' 5. Compactage et finitions en dernier'
+    +' 6. Max 7 postes, TVA 20%'
+    +' 7. total_poste = mo_cout + fourniture_cout'
+    +' 8. total_ht = somme tous les totaux'
+
+    +' FORMAT JSON strict (pas de markdown):'
+    +' {"analyse":"description precise",'
+    +'"volume_m3":'+vol+',"difficulte":"Facile|Moderee|Difficile",'
+    +'"postes":[{"nom":"...","detail":"quantite x prix_unitaire = sous-total",'
+    +'"mo_heures":0,"mo_cout":0,"fourniture_detail":"ex: 15T x 12euros/T = 180euros",'
+    +'"fourniture_cout":0,'
+    +'"fiche_tech":{"norme":"ex NF EN 13242","designation":"nom commercial","granulometrie":"0/20mm","usage":"couche de roulement, voirie legere","portance":"CBR>30","drainage":"bon","compactage":"OPM 95% mini","epaisseur_mini":"8cm","avantages":"stable, drainant, esthetique"},'
+    +'"total":0}],'
     +'"total_ht":0,"tva":0,"total_ttc":0,'
-    +'"conseils":["conseil pratique 1","conseil pratique 2"],'
-    +'"flux_prompt":"detailed realistic Flux AI inpainting prompt describing the finished '+data.type+' result: specific materials texture, perspective matching the original photo, natural lighting, professional earthwork finish, photorealistic style, no people"}'
-    +' REGLES: max 6 postes, TVA 20%, total_poste=mo_cout+fourniture_cout, total_ht=somme totaux.'
-    +' fiche_tech: string courte norme+usage (uniquement pour postes avec fourniture).'
-    +' flux_prompt EN ANGLAIS: PRESERVE buildings/walls/vehicles/trees/sky. REPLACE ONLY ground surface with: '
-    +data.type+' finished, compacted '+data.sol+' texture, flat professional finish, same photo perspective and lighting, photorealistic, no people.'
+    +'"conseils":["uniquement des conseils pratiques NON monetaires"],'
+    +'"arguments_vente":['
+    +'  "argument commercial fort mettant en valeur la qualite du travail",'
+    +'  "argument sur la perennite et la valeur ajoutee pour le client",'
+    +'  "argument sur la reactivite et le service local"'
+    +'],'
+    +'"valeur_ajoutee":"phrase courte percutante sur ce que le client gagne avec ce chantier (economie, confort, valorisation bien)",'
+    +'"flux_prompt":"PRESERVE buildings/walls/vehicles/trees/sky. REPLACE ONLY ground with: '
+    +data.type+' finished, compacted '+data.sol+', flat professional TP surface, same photo angle and lighting, photorealistic, no people"}'
+    ;
   try {
     var resp = await fetch(PROXY+'/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:4000,system:'You are a JSON API. Always respond with raw JSON only, no markdown.',messages:[{role:'user',content:prompt}]})});
     var d2 = await resp.json();
@@ -468,13 +567,23 @@ function afficherDevis(d) {
     return '<div class="pr"><div style="flex:1"><div class="pn">'+p.nom+'</div><div class="pd">'+p.detail+'</div>'+(det?'<div style="margin-top:3px">'+det+'</div>':'')+'</div><div style="text-align:right;min-width:80px"><div class="pt">'+Number(p.total).toFixed(0)+' €</div></div></div>';
   }).join('')||'';
   var ch = (d.conseils||[]).map(function(c){ return '<div class="ci">'+c+'</div>'; }).join('');
+  var args = (d.arguments_vente||[]).map(function(a,i){
+    var icons = ['🏆','⚡','📍'];
+    return '<div style="display:flex;gap:10px;padding:10px;background:rgba(44,95,46,.1);border-radius:8px;margin-bottom:6px">'
+      +'<span style="font-size:18px;flex-shrink:0">'+icons[i]||'✓'+'</span>'
+      +'<span style="font-size:13px;color:var(--w);line-height:1.4">'+a+'</span>'
+      +'</div>';
+  }).join('');
+  var valeur = d.valeur_ajoutee ? '<div style="background:linear-gradient(135deg,rgba(44,95,46,.3),rgba(61,122,64,.2));border:1px solid rgba(90,158,93,.4);border-radius:10px;padding:14px;margin-bottom:12px;text-align:center"><div style="font-size:11px;color:var(--gl);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Valeur ajoutee</div><div style="font-size:15px;font-weight:600;color:var(--w);line-height:1.4">'+d.valeur_ajoutee+'</div></div>' : '';
   document.getElementById('rc').innerHTML = ''
     +'<div class="dhb"><div class="dt">'+d._type+'</div><div class="dm">'+d._client+' — '+d._ville+' — '+d._date+'</div><div class="bgs"><span class="bg bgg">30 jours</span><span class="bg '+db+'">'+d.difficulte+'</span></div></div>'
     +(d._photo?'<div style="margin-bottom:12px;border-radius:12px;overflow:hidden"><img src="'+d._photo+'" style="width:100%;max-height:180px;object-fit:cover;display:block"></div>':'')
     +'<p style="font-size:13px;color:var(--g4);margin-bottom:12px;line-height:1.6">'+d.analyse+'</p>'
     +'<div class="ms"><div class="mt"><div class="mv">'+d.volume_m3+'</div><div class="ml">m3</div></div><div class="mt"><div class="mv">'+d.difficulte+'</div><div class="ml">Difficulte</div></div><div class="mt"><div class="mv">'+Number(d.total_ttc).toFixed(0)+'€</div><div class="ml">TTC</div></div></div>'
     +'<div class="card"><div class="ct">Detail postes</div>'+ph+'<div class="tx" style="margin-top:12px"><div class="tr"><span>Total HT</span><span>'+Number(d.total_ht).toFixed(2)+' €</span></div><div class="tr"><span>TVA 20%</span><span>'+Number(d.tva).toFixed(2)+' €</span></div><div class="tf"><span>Total TTC</span><span>'+Number(d.total_ttc).toFixed(2)+' €</span></div></div></div>'
-    +(ch?'<div class="card"><div class="ct">Conseils</div>'+ch+'</div>':'')
+    +valeur
+    +(args?'<div class="card"><div class="ct" style="color:var(--amb)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>Arguments de vente</div>'+args+'</div>':'')
+    +(ch?'<div class="card"><div class="ct">Conseils pratiques</div>'+ch+'</div>':'')
     +(d._photo?'<div class="rb"><div style="font-family:Barlow Condensed,sans-serif;font-size:18px;font-weight:700;color:var(--amb);margin-bottom:6px">Simulation rendu Flux IA</div><div style="font-size:13px;color:var(--g4);margin-bottom:12px">Flux IA remplace le sol sur votre photo.</div><div id="rp" style="display:none;text-align:center;padding:16px"><div class="sp" style="margin:0 auto 8px"></div><div id="rpmsg" style="font-size:13px;color:var(--g4)">Generation...</div></div><div id="rr" style="display:none;margin-bottom:12px"><div style="font-size:11px;color:var(--gl);margin-bottom:8px">Rendu genere !</div><img id="ri" style="width:100%;border-radius:10px;display:block"></div><button class="btn ba" id="btnr" onclick="genRendu()">Generer le rendu IA</button></div>':'')
     +'<button class="btn bp" onclick="exportPDF()">Telecharger PDF</button>'
     +'<button class="btn bo" onclick="partager()">Partager</button>'
@@ -624,21 +733,32 @@ async function supD(id,e) {
 // ── ONGLET ACHATS ──
 function ficheHTML(f) {
   if (!f) return '';
-  // Support string ou objet
+  // Support string simple
   if (typeof f === 'string' && f.length > 0) {
     return '<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:8px 10px;margin-top:8px;font-size:12px;color:var(--g4)">'+f+'</div>';
   }
   if (typeof f !== 'object') return '';
-  var html = '<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:10px;margin-top:8px">';
-  html += '<div style="font-size:11px;font-weight:600;color:var(--g4);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Fiche technique</div>';
-  if (f.norme) html += '<div style="font-size:12px;margin-bottom:3px"><span style="color:var(--g4)">Norme: </span><span style="color:var(--w)">'+f.norme+'</span></div>';
-  if (f.granulometrie) html += '<div style="font-size:12px;margin-bottom:3px"><span style="color:var(--g4)">Granulometrie: </span><span style="color:var(--w)">'+f.granulometrie+'</span></div>';
-  if (f.usage) html += '<div style="font-size:12px;margin-bottom:3px"><span style="color:var(--g4)">Usage: </span><span style="color:var(--w)">'+f.usage+'</span></div>';
-  if (f.portance) html += '<div style="font-size:12px;margin-bottom:3px"><span style="color:var(--g4)">Portance: </span><span style="color:var(--w)">'+f.portance+'</span></div>';
-  if (f.drainage) html += '<div style="font-size:12px;margin-bottom:3px"><span style="color:var(--g4)">Drainage: </span><span style="color:var(--w)">'+f.drainage+'</span></div>';
-  if (f.avantages) html += '<div style="font-size:12px;margin-top:4px;color:var(--gl);font-style:italic">'+f.avantages+'</div>';
-  html += '</div>';
-  return html;
+  // Fiche technique complète
+  var champs = [
+    ['norme','Norme'],['designation','Designation'],['granulometrie','Granulometrie'],
+    ['usage','Usage'],['portance','Portance CBR'],['drainage','Drainage'],
+    ['compactage','Compactage'],['epaisseur_mini','Ep. mini'],['avantages','Avantages']
+  ];
+  var rows = champs.filter(function(c){return f[c[0]];}).map(function(c){
+    return '<div style="display:flex;gap:8px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.05)">'
+      +'<span style="font-size:11px;color:var(--g4);min-width:90px;flex-shrink:0">'+c[1]+'</span>'
+      +'<span style="font-size:11px;color:var(--w)">'+f[c[0]]+'</span>'
+      +'</div>';
+  }).join('');
+  if (!rows) return '';
+  return '<div style="background:rgba(255,255,255,.04);border:1px solid rgba(90,158,93,.2);border-radius:10px;padding:12px;margin-top:10px">'
+    +'<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">'
+    +'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--gl)" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>'
+    +'<span style="font-size:11px;font-weight:700;color:var(--gl);text-transform:uppercase;letter-spacing:.8px">Fiche technique</span>'
+    +(f.designation?'<span style="font-size:11px;color:var(--w);margin-left:4px">— '+f.designation+'</span>':'')
+    +'</div>'
+    +rows
+    +'</div>';
 }
 
 function renderAchats() {
@@ -830,6 +950,151 @@ async function clearAll() {
 }
 
 // ── UTILS ──
+// ── ONGLET CREATIF ──
+var photoCreatif = null;
+
+function handlePhotoCreatif(e) {
+  var f = e.target.files[0]; if (!f) return;
+  var r = new FileReader();
+  r.onload = function(ev) {
+    photoCreatif = ev.target.result;
+    var z = document.getElementById('pz-creatif');
+    z.classList.add('hp');
+    z.innerHTML = '<img src="'+photoCreatif+'" alt="Terrain" style="border-radius:10px"><div class="pa"><span class="pbdg">Photo chargee</span><button class="pch" onclick="resetPhotoCreatif()">Changer</button></div>';
+    document.getElementById('creatif-before').src = photoCreatif;
+  };
+  r.readAsDataURL(f);
+}
+
+function openCamCreatif(){ document.getElementById('ic-creatif').click(); }
+function openGalCreatif(){ document.getElementById('ig-creatif').click(); }
+function photoCreatifZoneHTML() {
+  return '<div style="text-align:center;padding:24px 16px">'
+    +'<div style="font-size:14px;color:var(--g4);margin-bottom:12px">Photo du terrain</div>'
+    +'<div style="display:flex;gap:10px;justify-content:center">'
+    +'<button onclick="openCamCreatif()" style="background:var(--g);border:none;color:white;padding:10px 16px;border-radius:10px;font-family:Barlow,sans-serif;font-size:13px;font-weight:600;cursor:pointer">Appareil photo</button>'
+    +'<button onclick="openGalCreatif()" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:white;padding:10px 16px;border-radius:10px;font-family:Barlow,sans-serif;font-size:13px;font-weight:600;cursor:pointer">Galerie</button>'
+    +'</div></div>';
+}
+
+function resetPhotoCreatif() {
+  photoCreatif = null;
+  ['ic-creatif','ig-creatif'].forEach(function(id){ document.getElementById(id).value=''; });
+  var z = document.getElementById('pz-creatif');
+  z.classList.remove('hp');
+  z.classList.remove('hp');
+  z.innerHTML = photoCreatifZoneHTML();
+}
+
+async function genererCreatif() {
+  if (!photoCreatif) { showT('Ajoutez une photo du terrain'); return; }
+
+  var btn = document.getElementById('btn-creatif');
+  btn.disabled = true;
+
+  var style = document.getElementById('style-creatif').value;
+  var mots = document.getElementById('mots-creatif').value.trim();
+  var motsExtra = mots ? ', ' + mots : '';
+
+  // Prompt précis qui préserve les bâtiments et suit votre exemple
+  var fluxPrompt = 'Exact same house, building and vehicle position if present.'
+    + ' Garden and terrain renovation only, ' + style + motsExtra + '.'
+    + ' Strictly respect original terrain elevation and slopes, do not flatten the ground.'
+    + ' If a vehicle is visible then wide gravel driveway at vehicle location following the slope.'
+    + ' If a staircase is visible then gravel path leading to staircase.'
+    + ' If slope greater than 1 meter then add natural stone enrochements retaining walls.'
+    + ' Natural green lawn, sober low-maintenance planting, simple clean landscaping.'
+    + ' Photorealistic, realistic natural lighting matching original photo,'
+    + ' high detail, faithful to original photo composition and topography.'
+    + ' Do NOT remove or modify any existing building, wall, terrace or structure.'
+    + ' Only transform bare ground and garden areas.';
+
+  document.getElementById('creatif-result').style.display = 'block';
+  document.getElementById('creatif-progress').style.display = 'block';
+  document.getElementById('creatif-images').style.display = 'none';
+  document.getElementById('creatif-prompt-text').textContent = fluxPrompt;
+
+  // Créer masque full (tout remplacer sauf bâtiments - masque blanc total)
+  var mask = await creerMaskCreatif(photoCreatif);
+
+  setCreatifMsg('Envoi a Flux IA...');
+  try {
+    var sr = await fetch(PROXY+'/api/inpainting/submit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ image: photoCreatif, mask: mask, prompt: fluxPrompt })
+    });
+    var sd = await sr.json();
+    if (sd.error) throw new Error(sd.error);
+
+    for (var i=0; i<45; i++) {
+      await new Promise(function(r){ setTimeout(r, 4000); });
+      setCreatifMsg('Generation... (' + (i*4+4) + 's)');
+      try {
+        var pr = await fetch(PROXY+'/api/inpainting/status/'+sd.request_id);
+        var pd = await pr.json();
+        if (pd.status === 'completed') {
+          document.getElementById('creatif-progress').style.display = 'none';
+          document.getElementById('creatif-images').style.display = 'block';
+          document.getElementById('creatif-after').src = pd.image;
+          document.getElementById('creatif-prompt-box').style.display = 'block';
+          showT('Proposition generee !');
+          btn.disabled = false;
+          return;
+        }
+        if (pd.status === 'error') throw new Error(pd.error || 'Erreur Flux');
+        if (pd.queue_position) setCreatifMsg('File attente: pos ' + pd.queue_position);
+      } catch(pe) { console.warn('Poll:', pe.message); }
+    }
+    throw new Error('Timeout');
+  } catch(e) {
+    document.getElementById('creatif-progress').style.display = 'none';
+    showT('Erreur: ' + e.message);
+  }
+  btn.disabled = false;
+}
+
+async function creerMaskCreatif(p) {
+  // Masque blanc sur toute la zone terrain/jardin (bas 70% de l'image)
+  // Zone noire sur le haut (ciel, bâtiments hauts)
+  return new Promise(function(res) {
+    var img = new Image();
+    img.onload = function() {
+      var c = document.createElement('canvas');
+      c.width = img.width; c.height = img.height;
+      var ctx = c.getContext('2d');
+      // Fond blanc (tout remplacer par défaut)
+      ctx.fillStyle = 'white';
+      ctx.fillRect(0, 0, c.width, c.height);
+      // Zone ciel/bâtiments : garder le haut 30% en noir (préserver)
+      var skyH = Math.floor(c.height * 0.30);
+      var grad = ctx.createLinearGradient(0, skyH, 0, skyH + 80);
+      grad.addColorStop(0, 'black');
+      grad.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, c.width, skyH + 80);
+      ctx.fillStyle = 'black';
+      ctx.fillRect(0, 0, c.width, skyH);
+      res(c.toDataURL('image/png'));
+    };
+    img.src = p;
+  });
+}
+
+function setCreatifMsg(m) {
+  var el = document.getElementById('creatif-msg');
+  if (el) el.textContent = m;
+}
+
+function dlCreatif() {
+  var img = document.getElementById('creatif-after');
+  if (!img || !img.src) return;
+  var a = document.createElement('a');
+  a.href = img.src;
+  a.download = 'amenagement_creatif.jpg';
+  a.click();
+}
+
 function goNew(){showTab('new');}
 function goResult(){showTab('result');}
 function updateHC(){ document.getElementById('hc').textContent=hist.length+' devis'; }
