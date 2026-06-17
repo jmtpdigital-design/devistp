@@ -10,7 +10,85 @@
 <title>DevisTP</title>
 <link rel="manifest" href="manifest.json">
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js">
+/* ====== CABLAGE ONGLET PRIX ====== */
+var _prixChantier=null,_prixCodes=null,_prixParams=null;
+async function ouvrirOngletPrix(devis, chantier, postesCodes, params) {
+  _prixChantier=chantier; _prixCodes=postesCodes; _prixParams=params||{};
+  document.getElementById('n-prix').style.display='';
+  var dem = await genererDemandesPrix(devis, chantier);
+  mettreEnPause(devis, dem);
+  cur = devis; hideL();
+  renderOngletPrix(devis); showTab('prix');
+}
+function renderOngletPrix(devis) {
+  var nb=(devis.demandes_prix||[]).reduce(function(s,d){return s+d.lignes.length;},0);
+  document.getElementById('prix-banniere').innerHTML='<div style="background:rgba(245,159,10,.1);border:1px solid rgba(245,159,10,.3);border-radius:12px;padding:10px 12px;margin-bottom:12px;font-size:13px;color:#f5c98a">Devis en pause — '+nb+' prix fournisseur a confirmer</div>';
+  document.getElementById('prix-demandes').innerHTML=(devis.demandes_prix||[]).map(function(d,i){
+    var alts=(d.alternatives||[]).map(function(a){return '<div style="font-size:12px;color:#cdd3cd;margin-top:3px">&#8627; '+a.nom+' &middot; '+a.dist+' km'+(a.adresse?' — '+a.adresse:'')+'</div>';}).join('');
+    return '<div class="card"><div class="ct">'+d.fournisseur+(d.dist!=null?' <span style="color:#f59f0a">&middot; '+d.dist+' km</span>':'')+'</div>'
+      +(d.adresse?'<div style="font-size:12px;color:var(--g4)">'+d.adresse+'</div>':'')
+      +(d.tel?'<div style="font-size:12px;color:var(--g4);margin-bottom:8px">'+d.tel+'</div>':'')
+      +'<div style="font-size:12px;color:#cdd3cd;background:rgba(255,255,255,.04);border-radius:8px;padding:6px 8px;margin-bottom:8px">'+d.lignes.map(function(l){return l.quantite+' '+l.unite+' '+l.libelle;}).join('<br>')+'</div>'
+      +'<textarea id="dp-'+i+'" style="width:100%;height:120px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:9px;color:var(--w);font-family:Barlow,sans-serif;font-size:12.5px;resize:none">'+d.message+'</textarea>'
+      +'<div style="display:flex;gap:8px;margin-top:8px"><button class="pb" style="flex:1;background:var(--g)" onclick="copierDemande('+i+')">Copier</button>'
+      +(d.tel?'<a class="pb" style="flex:1;background:var(--gm);text-decoration:none;text-align:center" href="tel:'+d.tel.replace(/\s/g,'')+'">Appeler</a>':'')+'</div>'
+      +(alts?'<div style="margin-top:10px;border-top:1px solid rgba(255,255,255,.06);padding-top:8px"><div style="font-size:11px;color:var(--g4);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Autres a proximite</div>'+alts+'</div>':'')
+      +'</div>';
+  }).join('');
+  var fournitures=collecterFournituresAChiffrer(devis);
+  document.getElementById('prix-saisie').innerHTML='<div class="card" style="border-color:rgba(90,158,93,.4)"><div class="ct">Saisir les prix recus</div>'
+    +fournitures.map(function(f){return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><span style="flex:1;font-size:12.5px;color:#cdd3cd">'+f.libelle+' (EUR/'+f.unite+')</span><input type="number" id="pr-'+f.code+'" step="0.1" min="0" placeholder="?" style="width:80px;background:rgba(255,255,255,.06);border:1px solid rgba(90,158,93,.4);border-radius:8px;padding:7px;color:var(--w);font-family:Barlow,sans-serif;font-size:14px"></div>';}).join('')
+    +'<button class="btn" style="width:100%;background:var(--gl);color:var(--gd);font-weight:700;border:none;padding:11px;border-radius:9px" onclick="reprendreDevisDepuisPrix()">Reprendre le devis</button></div>';
+}
+function copierDemande(i){var el=document.getElementById('dp-'+i);if(el){navigator.clipboard.writeText(el.value);if(window.showT)showT('Copie');}}
+async function reprendreDevisDepuisPrix(){
+  var fournitures=collecterFournituresAChiffrer(cur);
+  var fourMap={}; (cur.demandes_prix||[]).forEach(function(d){ d.lignes.forEach(function(l){ fourMap[l.code]=d.fournisseur; }); });
+  fournitures.forEach(function(f){
+    var v=parseFloat(document.getElementById('pr-'+f.code).value);
+    if(!isNaN(v)&&v>0){ enregistrerPrixRecu(cur,BAREME,f.code,v); apprendrePrix(f.code,v,fourMap[f.code]||'',_prixChantier.ville); }
+  });
+  var devisFinal=reprendreDevis(cur,BAREME,_prixChantier,_prixCodes,_prixParams);
+  cur=devisFinal;
+  if(devisFinal.statut==='valide'){
+    document.getElementById('n-prix').style.display='none';
+    await finaliserDevis(cur,_prixChantier);
+  } else { renderOngletPrix(cur); }
+}
+
+/* ====== CABLAGE ONGLET BARÈME ====== */
+async function ouvrirBareme(){ await chargerBareme(); renderBareme(); showTab('bareme'); }
+function _inp(id,val,step){return '<input id="'+id+'" type="number" step="'+(step||'0.01')+'" value="'+(val!=null?val:'')+'" style="width:90px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:7px;padding:6px;color:var(--w);font-family:Barlow,sans-serif;font-size:13.5px;text-align:right">';}
+function _txt(id,val){return '<input id="'+id+'" type="text" value="'+(val||'')+'" style="flex:1;min-width:90px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:7px;padding:6px;color:var(--w);font-family:Barlow,sans-serif;font-size:13px">';}
+function _row(label,h){return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span style="flex:1;font-size:13px;color:#cdd3cd">'+label+'</span>'+h+'</div>';}
+function renderBareme(){
+  var B=BAREME,h='';
+  h+='<div class="card"><div class="ct">Fournitures (prix unitaire)</div>';
+  Object.keys(B.fournitures).forEach(function(code){var f=B.fournitures[code];var src=f._source?'<div style="font-size:11px;color:var(--g4)">appris : '+f._source+'</div>':'';
+    h+='<div style="border-bottom:1px solid rgba(255,255,255,.06);padding:8px 0"><div style="display:flex;gap:8px;align-items:center;margin-bottom:6px">'+_txt('bf-lib-'+code,f.libelle)+'</div><div style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:#cdd3cd">Prix '+_inp('bf-prix-'+code,f.prix_unitaire)+' EUR/'+(f.unite||'U')+(f.densite_Tm3!=null?' &middot; densite '+_inp('bf-dens-'+code,f.densite_Tm3,'0.01')+' T/m3':'')+'</div><label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--g4);margin-top:5px"><input type="checkbox" id="bf-conf-'+code+'"'+(f.prix_a_confirmer?' checked':'')+'> a confirmer</label>'+src+'</div>';});
+  h+='<button class="pb" style="background:var(--g);margin-top:10px;width:100%" onclick="ajouterFourniture()">+ Ajouter une fourniture</button></div>';
+  h+='<div class="card"><div class="ct">Sols (foisonnement / densite / rendement 2T5)</div>';
+  Object.keys(B.sols).forEach(function(s){var sol=B.sols[s];h+='<div style="border-bottom:1px solid rgba(255,255,255,.06);padding:8px 0"><div style="font-size:13px;font-weight:600;color:#5a9e5d;margin-bottom:6px">'+sol.libelle+'</div><div style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:#cdd3cd">foisonnt '+_inp('bs-foi-'+s,sol.foisonnement,'0.01')+' &middot; densite '+_inp('bs-den-'+s,sol.densite_Tm3,'0.01')+' &middot; rdt '+_inp('bs-rdt-'+s,sol.rendement_2t5_m3h,'0.5')+' m3/h</div></div>';});
+  h+='</div>';
+  h+='<div class="card"><div class="ct">Livraison &amp; transport</div>'+_row('Mode prix matiere','<select id="bm-mode" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:7px;padding:6px;color:var(--w);font-size:13px"><option value="depart_carriere"'+(B.mode_prix_materiaux==='depart_carriere'?' selected':'')+'>Depart carriere</option><option value="rendu_chantier"'+(B.mode_prix_materiaux==='rendu_chantier'?' selected':'')+'>Rendu chantier</option></select>')+_row('Marge fournitures (x prix HT)',_inp('bcoef',B.coef_fourniture||1,'0.01'))+_row('Livraison (EUR/T/km)',_inp('bl-tkm',B.livraison.cout_Tkm,'0.01'))+_row('Forfait mini livraison',_inp('bl-min',B.livraison.forfait_mini,'1'))+_row('Transfert engin (forfait)',_inp('bt-base',B.transfert.forfait_base,'1'))+_row('Transfert (EUR/km)',_inp('bt-km',B.transfert.cout_par_km,'0.1'))+'</div>';
+  h+='<div class="card"><div class="ct">Evacuation</div>'+_row('Capacite camion (m3)',_inp('be-cap',B.evacuation.capacite_camion_m3,'0.5'))+_row('Rotation (forfait)',_inp('be-rot',B.evacuation.cout_rotation_base,'1'))+_row('Rotation (EUR/km)',_inp('be-km',B.evacuation.cout_rotation_par_km,'0.1'));
+  Object.keys(B.evacuation.tarif_decharge_Ttonne).forEach(function(t){h+=_row('Decharge '+t+' (EUR/T)',_inp('be-dec-'+t,B.evacuation.tarif_decharge_Ttonne[t],'1'));});
+  h+=_row('Rendt pose grave (T/h)',_inp('bmo-grave',B.main_oeuvre.rendement_grave_Th,'0.5'))+'</div>';
+  h+='<button class="btn" style="width:100%;background:var(--gl);color:var(--gd);font-weight:700;border:none;padding:13px;border-radius:10px;margin-top:6px" onclick="enregistrerBareme()">Enregistrer le barème</button>';
+  document.getElementById('bareme-contenu').innerHTML=h;
+}
+function ajouterFourniture(){var code=prompt('Code interne (sans espace, ex: gnt_0_80)');if(!code)return;code=code.trim().replace(/[^a-z0-9_]/gi,'_').toLowerCase();if(BAREME.fournitures[code]){alert('Ce code existe deja');return;}BAREME.fournitures[code]={libelle:'Nouveau materiau',unite:'T',prix_unitaire:0,densite_Tm3:1.8,prix_a_confirmer:true};renderBareme();}
+function enregistrerBareme(){var B=BAREME;
+  Object.keys(B.fournitures).forEach(function(code){var f=B.fournitures[code];var lib=document.getElementById('bf-lib-'+code);if(lib)f.libelle=lib.value;var p=document.getElementById('bf-prix-'+code);if(p)f.prix_unitaire=parseFloat(p.value)||0;var dn=document.getElementById('bf-dens-'+code);if(dn)f.densite_Tm3=parseFloat(dn.value)||f.densite_Tm3;var cf=document.getElementById('bf-conf-'+code);if(cf)f.prix_a_confirmer=cf.checked;});
+  Object.keys(B.sols).forEach(function(s){B.sols[s].foisonnement=parseFloat(document.getElementById('bs-foi-'+s).value)||B.sols[s].foisonnement;B.sols[s].densite_Tm3=parseFloat(document.getElementById('bs-den-'+s).value)||B.sols[s].densite_Tm3;B.sols[s].rendement_2t5_m3h=parseFloat(document.getElementById('bs-rdt-'+s).value)||B.sols[s].rendement_2t5_m3h;});
+  B.mode_prix_materiaux=document.getElementById('bm-mode').value;B.coef_fourniture=parseFloat(document.getElementById('bcoef').value)||1;B.livraison.cout_Tkm=parseFloat(document.getElementById('bl-tkm').value)||B.livraison.cout_Tkm;B.livraison.forfait_mini=parseFloat(document.getElementById('bl-min').value)||0;B.transfert.forfait_base=parseFloat(document.getElementById('bt-base').value)||B.transfert.forfait_base;B.transfert.cout_par_km=parseFloat(document.getElementById('bt-km').value)||B.transfert.cout_par_km;B.evacuation.capacite_camion_m3=parseFloat(document.getElementById('be-cap').value)||B.evacuation.capacite_camion_m3;B.evacuation.cout_rotation_base=parseFloat(document.getElementById('be-rot').value)||B.evacuation.cout_rotation_base;B.evacuation.cout_rotation_par_km=parseFloat(document.getElementById('be-km').value)||B.evacuation.cout_rotation_par_km;
+  Object.keys(B.evacuation.tarif_decharge_Ttonne).forEach(function(t){B.evacuation.tarif_decharge_Ttonne[t]=parseFloat(document.getElementById('be-dec-'+t).value)||0;});
+  B.main_oeuvre.rendement_grave_Th=parseFloat(document.getElementById('bmo-grave').value)||B.main_oeuvre.rendement_grave_Th;
+  sauvegarderBareme();if(window.showT)showT('Barème enregistre');else alert('Barème enregistre');
+}
+
+</script>
 <style>
 :root{--gd:#0f1a0f;--gdp:#1a2e1a;--g:#2c5f2e;--gm:#3d7a40;--gl:#5a9e5d;--amb:#f59f0a;--w:#fff;--g4:#9ca3af;--g8:#1f2937;--red:#dc2626;--r:12px;--rs:8px}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -296,6 +374,12 @@ header h1 span{color:var(--gl)}
       </div>
     </div>
   </div>
+    <div class="sc" id="sc-prix">
+      <div id="prix-banniere"></div>
+      <div id="prix-demandes"></div>
+      <div id="prix-saisie"></div>
+    </div>
+    <div class="sc" id="sc-bareme"><div id="bareme-contenu"></div></div>
   <div class="bn">
     <button class="active" id="n-new" onclick="showTab('new')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>Nouveau</button>
     <button id="n-result" onclick="goResult()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Devis</button>
@@ -307,6 +391,8 @@ header h1 span{color:var(--gl)}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>Creatif
     </button>
     <button id="n-settings" onclick="showTab('settings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>Reglages</button>
+    <button id="n-prix" onclick="showTab('prix')" style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>Prix</button>
+    <button id="n-bareme" onclick="ouvrirBareme()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h18v4H3zM3 10h18v4H3zM3 17h18v4H3z"/></svg>Barème</button>
   </div>
 </div>
 <script>
@@ -315,16 +401,28 @@ const BASE_LAT = 45.3833, BASE_LNG = 6.1167;
 let photo = null, cur = null, hist = [], cfg = JSON.parse(localStorage.getItem('cfg') || '{}');
 let chantierLat = null, chantierLng = null, carrieresList = [];
 
+/* Fournisseurs / carrieres avec adresses (distance calculee par distKm) */
 const CARRIERES_DB = [
-  { nom:'Carriere Pontcharra (Lafarge)', lat:45.427, lng:6.022, tel:'04 76 97 60 00', mat:['tout-venant','grave','gravier','concasse','remblai'] },
-  { nom:'Carriere Allevard',             lat:45.391, lng:6.133, tel:'04 76 97 50 00', mat:['tout-venant','remblai','grave'] },
-  { nom:'Carriere Crolles (Cemex)',      lat:45.285, lng:5.995, tel:'04 76 08 15 00', mat:['grave','sable','beton'] },
-  { nom:'Carriere La Rochette',          lat:45.450, lng:6.100, tel:'04 79 25 51 00', mat:['tout-venant','grave','concasse'] },
-  { nom:'Carriere Goncelin',             lat:45.340, lng:6.000, tel:'04 76 71 80 00', mat:['tout-venant','grave','remblai'] },
-  { nom:'Point P Pontcharra',            lat:45.422, lng:6.020, tel:'04 76 97 10 22', mat:['tuyau','drain','geotextile','sable','ciment','bordurette'] },
-  { nom:'Espace Materiaux Crolles',      lat:45.283, lng:5.992, tel:'04 76 08 12 34', mat:['bordure','bordurette','parpaing'] },
-  { nom:'Beton Chantiers Isere Crolles', lat:45.290, lng:5.998, tel:'04 76 08 08 08', mat:['beton'] },
-  { nom:'Eurovia Isere Grenoble',        lat:45.190, lng:5.720, tel:'04 76 50 10 00', mat:['enrobe'] },
+  // --- Fournisseurs reels verifies (Gresivaudan / Pays d'Allevard) ---
+  { nom:'Granulats Vicat Pontcharra', adresse:'193 Rue de la Dragueline, 38530 Pontcharra',
+    lat:45.4361, lng:6.0059, tel:'04 76 97 61 64',
+    mat:['tout-venant','grave','gravier','concasse','sable','remblai'] },
+  { nom:'Technimat France Materiaux', adresse:'13 Chemin de la Touviere, 38580 Allevard',
+    lat:45.4036, lng:6.0806, tel:'04 76 45 09 27',
+    mat:['geotextile','bordurette','bordure','drain','sable','ciment','beton','tuyau'] },
+  { nom:'RAVIX TP', adresse:"Rue de l'Abergement, 38660 Le Touvet",
+    lat:45.3623, lng:5.9621, tel:'04 76 08 56 76',
+    mat:['tout-venant','grave','remblai','concasse','enrobe'] },
+
+  // --- Anciennes entrees (a completer avec adresses au fur et a mesure) ---
+  { nom:'Carriere Crolles (Cemex)', adresse:'38920 Crolles', lat:45.285, lng:5.995, tel:'04 76 08 15 00',
+    mat:['grave','sable','beton'] },
+  { nom:'Carriere La Rochette', adresse:'73110 La Rochette', lat:45.450, lng:6.100, tel:'04 79 25 51 00',
+    mat:['tout-venant','grave','concasse'] },
+  { nom:'Point P Pontcharra', adresse:'38530 Pontcharra', lat:45.422, lng:6.020, tel:'04 76 97 10 22',
+    mat:['tuyau','drain','geotextile','sable','ciment','bordurette'] },
+  { nom:'Eurovia Isere Grenoble', adresse:'38000 Grenoble', lat:45.190, lng:5.720, tel:'04 76 50 10 00',
+    mat:['enrobe'] },
 ];
 
 function distKm(la1,ln1,la2,ln2){
@@ -343,6 +441,571 @@ function carriereProchePour(type) {
   return list.find(function(c){ return c.mat.some(function(m){ return type.includes(m)||m.includes(type); }); }) || list[0];
 }
 
+
+/* ====== MODULES DevisTP (moteur + demandes prix + base auto-apprenante) ====== */
+/* --- MOTEUR --- */
+/* ============================================================
+   moteur-chiffrage.js  —  v2 COMPLET
+   Tous les postes terrassement / VRD / assainissement.
+   Calcul 100% deterministe a partir de bareme.json.
+   ============================================================ */
+
+function ceilQuart(h) { return Math.ceil(h * 4) / 4; }
+function round2(n)    { return Math.round(n * 100) / 100; }
+function euro(n)      { return Math.round(n); }
+
+/* ---------- VOLUMES ---------- */
+function calculVolumes(B, c) {
+  const sol = B.sols[c.sol];
+  const volEnPlace  = round2(c.surf * c.prof);
+  const volFoisonne = round2(volEnPlace * sol.foisonnement);
+  const tonnage     = round2(volEnPlace * sol.densite_Tm3);
+  return { volEnPlace, volFoisonne, tonnage, sol };
+}
+
+/* ---------- LIVRAISON ----------
+   Cout de livraison d'un tonnage de granulat, calcule a part
+   (uniquement en mode 'depart_carriere'). Sinon retourne 0 car
+   le transport est deja inclus dans le prix unitaire.
+   dist = distance carriere -> chantier (km). */
+function coutLivraison(B, tonnage, dist) {
+  if (B.mode_prix_materiaux !== 'depart_carriere' || !B.livraison) return 0;
+  const l = B.livraison;
+  const d = (dist != null) ? dist : 15;
+  return Math.max(l.forfait_mini || 0, tonnage * d * l.cout_Tkm);
+}
+
+/* ---------- HELPER prix provisoire ----------
+   Si la fourniture est marquee prix_a_confirmer dans le barème,
+   le poste est calcule avec le prix indicatif MAIS marque
+   provisoire -> il declenchera une demande de prix fournisseur. */
+function infosFourniture(B, code) {
+  const f = B.fournitures[code];
+  return { f, provisoire: !!f.prix_a_confirmer };
+}
+
+/* =====================================================================
+   POSTES UNITAIRES
+   Chaque poste renvoie : { nom, detail, mo_heures, mo_cout,
+     fourniture_detail, fourniture_cout, total, [prix_provisoire],
+     [fourniture_code], [quantite], [unite], [fiche_tech] }
+   ===================================================================== */
+
+/* --- Transfert / amenee-repli --- */
+function posteTransfert(B, c) {
+  const t = B.transfert;
+  const cout = euro(t.forfait_base + c.dist_km * t.cout_par_km);
+  return { nom:"Transfert et installation", detail:`Amenee/repli engin — ${c.dist_km} km`,
+    mo_heures:0, mo_cout:cout, fourniture_detail:"", fourniture_cout:0, total:cout };
+}
+
+/* --- Decapage terre vegetale (faible profondeur, rapide) --- */
+function posteDecapage(B, c) {
+  const ep = c.ep_decapage || 0.3;
+  const vol = round2(c.surf * ep);
+  const rendement = (B.sols.vegetale.rendement_2t5_m3h) * B.acces[c.acces].coef_rendement * 1.3;
+  const heures = ceilQuart(vol / rendement);
+  const cout = euro(heures * c.tarif);
+  return { nom:"Decapage terre vegetale", detail:`${c.surf} m2 x ${ep} m = ${vol} m3 / ${round2(rendement)} m3/h`,
+    mo_heures:heures, mo_cout:cout, fourniture_detail:"", fourniture_cout:0, total:cout };
+}
+
+/* --- Decaissage / terrassement general --- */
+function posteDecaissage(B, c, v) {
+  const rendement = v.sol.rendement_2t5_m3h * B.acces[c.acces].coef_rendement;
+  const heures = ceilQuart(v.volEnPlace / rendement);
+  const cout = euro(heures * c.tarif);
+  return { nom:"Decaissage / terrassement", detail:`${v.volEnPlace} m3 / ${round2(rendement)} m3/h (${v.sol.libelle}, acces ${B.acces[c.acces].libelle})`,
+    mo_heures:heures, mo_cout:cout, fourniture_detail:"", fourniture_cout:0, total:cout };
+}
+
+/* --- Tranchee (terrassement lineaire, plus lent que l'ouvert) --- */
+function posteTranchee(B, c, v) {
+  const largeur = c.largeur_tranchee || 0.4;
+  const ml = c.ml || round2(c.surf / largeur);
+  const vol = round2(ml * largeur * c.prof);
+  const rendement = v.sol.rendement_2t5_m3h * B.acces[c.acces].coef_rendement * 0.7;
+  const heures = ceilQuart(vol / rendement);
+  const cout = euro(heures * c.tarif);
+  return { nom:"Ouverture de tranchee", detail:`${ml} ml x ${largeur} m x ${c.prof} m = ${vol} m3 / ${round2(rendement)} m3/h`,
+    mo_heures:heures, mo_cout:cout, fourniture_detail:"", fourniture_cout:0, total:cout, ml:ml };
+}
+
+/* --- Evacuation en decharge (transport + frais decharge) --- */
+function posteEvacuation(B, c, v) {
+  const ev = B.evacuation;
+  const rotations = Math.ceil(v.volFoisonne / ev.capacite_camion_m3);
+  const coutRotation = ev.cout_rotation_base + c.dist_km * ev.cout_rotation_par_km;
+  const coutTransport = rotations * coutRotation;
+  const nature = c.nature_terre || "terre";
+  const tarifD = ev.tarif_decharge_Ttonne[nature] || 0;
+  const coutDecharge = v.tonnage * tarifD;
+  const total = euro(coutTransport + coutDecharge);
+  return { nom:"Evacuation en decharge",
+    detail:`${rotations} rotation(s) x ${euro(coutRotation)}EUR + ${v.tonnage} T x ${tarifD}EUR/T (${nature})`,
+    mo_heures:0, mo_cout:euro(coutTransport),
+    fourniture_detail:`Decharge : ${v.tonnage} T x ${tarifD}EUR/T`, fourniture_cout:euro(coutDecharge),
+    total:total };
+}
+
+/* --- Regalage / mise en forme sur place (pas d'evacuation) --- */
+function posteRegalage(B, c, v) {
+  const rendement = 25 * B.acces[c.acces].coef_rendement;
+  const heures = ceilQuart(v.volFoisonne / rendement);
+  const cout = euro(heures * c.tarif);
+  return { nom:"Regalage des terres sur place", detail:`${v.volFoisonne} m3 foisonne / ${round2(rendement)} m3/h`,
+    mo_heures:heures, mo_cout:cout, fourniture_detail:"", fourniture_cout:0, total:cout };
+}
+
+/* --- Granulat en couche (tout-venant, grave, sable) --- */
+function posteGranulat(B, c, code, epaisseur) {
+  const { f, provisoire } = infosFourniture(B, code);
+  const volume = round2(c.surf * epaisseur);
+  const tonnage = round2(volume * f.densite_Tm3);
+  const coef = B.coef_fourniture || 1;
+  const coutF = euro(tonnage * f.prix_unitaire * coef);
+  const livr = euro(coutLivraison(B, tonnage, c.dist_carriere) * coef);
+  const heures = ceilQuart(tonnage / B.main_oeuvre.rendement_grave_Th);
+  const coutMO = euro(heures * c.tarif);
+  const cTxt = coef !== 1 ? ' x' + coef : '';
+  const detailF = livr > 0
+    ? `${tonnage} T x ${f.prix_unitaire}EUR/T${cTxt} (depart) = ${coutF}EUR + livraison ${livr}EUR`
+    : `${tonnage} T x ${f.prix_unitaire}EUR/T${cTxt} (rendu) = ${coutF}EUR`;
+  return { nom:`Fourniture + pose ${f.libelle}`, detail:`${c.surf} m2 x ${epaisseur} m = ${volume} m3 -> ${tonnage} T`,
+    mo_heures:heures, mo_cout:coutMO,
+    fourniture_detail:detailF, fourniture_cout:coutF + livr, livraison_cout:livr,
+    total:coutF + livr + coutMO, prix_provisoire:provisoire, fourniture_code:code, quantite:tonnage, unite:"T",
+    fiche_tech:{ norme:f.norme||"", designation:f.libelle } };
+}
+
+/* --- Remblai (apport materiau compacte en couches) --- */
+function posteRemblai(B, c, code) {
+  code = code || "grave_0_20";
+  const { f, provisoire } = infosFourniture(B, code);
+  const volume = round2(c.surf * c.prof);
+  const tonnage = round2(volume * f.densite_Tm3 * 1.1);
+  const coef = B.coef_fourniture || 1;
+  const coutF = euro(tonnage * f.prix_unitaire * coef);
+  const livr = euro(coutLivraison(B, tonnage, c.dist_carriere) * coef);
+  const heures = ceilQuart(tonnage / B.main_oeuvre.rendement_grave_Th);
+  const coutMO = euro(heures * c.tarif);
+  const cTxt = coef !== 1 ? ' x' + coef : '';
+  const detailF = livr > 0
+    ? `${tonnage} T x ${f.prix_unitaire}EUR/T${cTxt} (depart) = ${coutF}EUR + livraison ${livr}EUR`
+    : `${tonnage} T x ${f.prix_unitaire}EUR/T${cTxt} = ${coutF}EUR`;
+  return { nom:`Remblai compacte (${f.libelle})`, detail:`${volume} m3 -> ${tonnage} T (compactage par couches +10%)`,
+    mo_heures:heures, mo_cout:coutMO,
+    fourniture_detail:detailF, fourniture_cout:coutF + livr, livraison_cout:livr,
+    total:coutF + livr + coutMO, prix_provisoire:provisoire, fourniture_code:code, quantite:tonnage, unite:"T" };
+}
+
+/* --- Drain (tuyau drainant) --- */
+function posteDrain(B, c, v) {
+  const { f, provisoire } = infosFourniture(B, "drain_100");
+  const ml = c.ml || round2(c.surf / (c.largeur_tranchee || 0.4));
+  const coutF = euro(ml * f.prix_unitaire);
+  const heures = ceilQuart(ml / 30);
+  const coutMO = euro(heures * c.tarif);
+  return { nom:`Fourniture + pose ${f.libelle}`, detail:`${ml} ml de drain`,
+    mo_heures:heures, mo_cout:coutMO,
+    fourniture_detail:`${ml} ml x ${f.prix_unitaire}EUR/ml = ${coutF}EUR`, fourniture_cout:coutF,
+    total:coutF + coutMO, prix_provisoire:provisoire, fourniture_code:"drain_100", quantite:ml, unite:"ml" };
+}
+
+/* --- Geotextile (surfacique, +10% recouvrements) --- */
+function posteGeotextile(B, c) {
+  const { f, provisoire } = infosFourniture(B, "geotextile_140");
+  const surface = round2(c.surf * 1.1);
+  const cout = euro(surface * f.prix_unitaire);
+  return { nom:"Fourniture + pose geotextile", detail:`${surface} m2 (recouvrements +10%)`,
+    mo_heures:0, mo_cout:0,
+    fourniture_detail:`${surface} m2 x ${f.prix_unitaire}EUR/m2 = ${cout}EUR`, fourniture_cout:cout,
+    total:cout, prix_provisoire:provisoire, fourniture_code:"geotextile_140", quantite:surface, unite:"m2",
+    fiche_tech:{ norme:f.norme, designation:f.libelle } };
+}
+
+/* --- Bordurette beton (lineaire) --- */
+function posteBordurette(B, c) {
+  const { f, provisoire } = infosFourniture(B, "bordurette_T1");
+  const ml = c.ml_bordure || round2(Math.sqrt(c.surf) * 4 * 0.5);
+  const coutF = euro(ml * f.prix_unitaire);
+  const heures = ceilQuart(ml / 15);
+  const coutMO = euro(heures * c.tarif);
+  return { nom:"Fourniture + pose bordurette", detail:`${ml} ml de bordurette T1`,
+    mo_heures:heures, mo_cout:coutMO,
+    fourniture_detail:`${ml} ml x ${f.prix_unitaire}EUR/ml = ${coutF}EUR`, fourniture_cout:coutF,
+    total:coutF + coutMO, prix_provisoire:provisoire, fourniture_code:"bordurette_T1", quantite:ml, unite:"ml",
+    fiche_tech:{ norme:f.norme, designation:f.libelle } };
+}
+
+/* --- Compactage / finitions --- */
+function posteCompactage(B, c) {
+  const heures = ceilQuart(c.surf / 150);
+  const cout = euro(heures * c.tarif);
+  return { nom:"Compactage et finitions", detail:`${c.surf} m2 — reglage + compactage plaque`,
+    mo_heures:heures, mo_cout:cout, fourniture_detail:"", fourniture_cout:0, total:cout };
+}
+
+/* =====================================================================
+   ASSEMBLEUR
+   ===================================================================== */
+function genererDevisDeterministe(B, c, postesVoulus, params = {}) {
+  Object.assign(c, params);
+  const v = calculVolumes(B, c);
+  const postes = [];
+
+  postesVoulus.forEach(code => {
+    switch (code) {
+      case "transfert":   postes.push(posteTransfert(B, c)); break;
+      case "decapage":    postes.push(posteDecapage(B, c)); break;
+      case "decaissage":  postes.push(posteDecaissage(B, c, v)); break;
+      case "tranchee":    postes.push(posteTranchee(B, c, v)); break;
+      case "evacuation":  postes.push(posteEvacuation(B, c, v)); break;
+      case "regalage":    postes.push(posteRegalage(B, c, v)); break;
+      case "remblai":     postes.push(posteRemblai(B, c, params.remblai_code)); break;
+      case "drain":       postes.push(posteDrain(B, c, v)); break;
+      case "geotextile":  postes.push(posteGeotextile(B, c)); break;
+      case "bordurette":  postes.push(posteBordurette(B, c)); break;
+      case "grave":       postes.push(posteGranulat(B, c, "grave_0_20",         params.ep_grave || 0.15)); break;
+      case "tout_venant": postes.push(posteGranulat(B, c, "tout_venant_0_31_5", params.ep_tv    || 0.20)); break;
+      case "sable":       postes.push(posteGranulat(B, c, "sable_0_4",          params.ep_sable || 0.10)); break;
+    }
+  });
+
+  const total_ht  = postes.reduce((s, p) => s + p.total, 0);
+  const enAttente = postes.some(p => p.prix_provisoire);
+
+  return {
+    volume_m3: v.volEnPlace, volume_foisonne_m3: v.volFoisonne, tonnage_T: v.tonnage,
+    difficulte: c.acces === "difficile" ? "Difficile" : c.acces === "moyen" ? "Moderee" : "Facile",
+    postes,
+    total_ht: euro(total_ht), tva: euro(total_ht * 0.20), total_ttc: euro(total_ht * 1.20),
+    statut: enAttente ? "en_attente_prix" : "valide",
+    contient_prix_provisoire: enAttente
+  };
+}
+
+/* --- DEMANDES DE PRIX --- */
+/* ============================================================
+   demandes-prix.js — v2 : fournisseurs proches + adresses
+   ------------------------------------------------------------
+   - regroupe les fournitures provisoires par fournisseur le PLUS PROCHE
+   - propose des fournisseurs alternatifs a proximite (avec adresse)
+   - redige les demandes de prix (IA + fallback)
+   - gere la mise en pause et la reprise du devis
+   Necessite : CARRIERES_DB, distKm, PROXY, cfg, chantierLat/Lng.
+   ============================================================ */
+
+/* --- Liste des carrieres triees par distance au chantier --- */
+function carrieresParDistance() {
+  var ref = (typeof chantierLat !== 'undefined' && chantierLat)
+    ? { la: chantierLat, ln: chantierLng }
+    : { la: BASE_LAT, ln: BASE_LNG };
+  return CARRIERES_DB
+    .map(function(c){ return Object.assign({}, c, { dist: parseFloat(distKm(ref.la, ref.ln, c.lat, c.lng).toFixed(1)) }); })
+    .sort(function(a,b){ return a.dist - b.dist; });
+}
+
+/* --- Fournisseurs proches qui vendent un materiau donne --- */
+function fournisseursProchesPour(code, libelle, nb) {
+  nb = nb || 3;
+  var cle = (code + ' ' + libelle).toLowerCase();
+  var liste = carrieresParDistance();
+  var matches = liste.filter(function(c){
+    return c.mat.some(function(m){ return cle.includes(m) || cle.includes(m.replace('-','')); });
+  });
+  if (!matches.length) matches = liste; // au pire, on propose les plus proches
+  return matches.slice(0, nb);
+}
+
+/* --- Collecte des fournitures a chiffrer dans un devis --- */
+function collecterFournituresAChiffrer(devis) {
+  return (devis.postes || [])
+    .filter(function(p){ return p.prix_provisoire && p.fourniture_code; })
+    .map(function(p){
+      return { code: p.fourniture_code,
+        libelle: p.nom.replace(/^Fourniture \+ pose /,'').replace(/^Remblai compacte \(|\)$/g,''),
+        quantite: p.quantite, unite: p.unite };
+    });
+}
+
+/* --- Regroupement : chaque fourniture -> son fournisseur le plus proche,
+       avec la liste des alternatives a proximite --- */
+function regrouperParFournisseur(fournitures) {
+  var groupes = {};
+  fournitures.forEach(function(f){
+    var proches = fournisseursProchesPour(f.code, f.libelle, 3);
+    var principal = proches[0];
+    if (!groupes[principal.nom]) {
+      groupes[principal.nom] = { fournisseur: principal, alternatives: proches.slice(1), lignes: [] };
+    }
+    groupes[principal.nom].lignes.push(f);
+  });
+  return Object.values(groupes);
+}
+
+/* --- Redaction des demandes de prix (IA + fallback) --- */
+async function genererDemandesPrix(devis, chantier) {
+  var fournitures = collecterFournituresAChiffrer(devis);
+  if (!fournitures.length) return [];
+  var groupes = regrouperParFournisseur(fournitures);
+  var ent = cfg.nom || 'notre entreprise';
+  var demandes = [];
+
+  for (var i = 0; i < groupes.length; i++) {
+    var g = groupes[i];
+    var lignesTxt = g.lignes.map(function(l){ return l.quantite + ' ' + l.unite + ' de ' + l.libelle; }).join(', ');
+    var message;
+    try {
+      var r = await fetch(PROXY + '/api/claude', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          model:'claude-sonnet-4-6', max_tokens:400,
+          system:'Tu rediges des demandes de prix professionnelles et concises pour des fournisseurs de materiaux TP. Texte brut pret a envoyer, pas de markdown.',
+          messages:[{ role:'user', content:
+            'Redige une courte demande de prix professionnelle de la part de "' + ent + '"'
+            + ' au fournisseur "' + g.fournisseur.nom + '" (' + (g.fournisseur.adresse||'') + ').'
+            + ' Materiaux a chiffrer : ' + lignesTxt + '.'
+            + ' Chantier a ' + chantier.ville + ', livraison rendu chantier souhaitee.'
+            + ' Demande : prix unitaire HT, delai de disponibilite, conditions de livraison.'
+            + ' Termine en demandant un retour rapide. Ton courtois et direct.'
+          }]
+        })
+      });
+      var d = await r.json();
+      message = (d.content || []).filter(function(x){return x.type==='text';}).map(function(x){return x.text||'';}).join('').trim();
+    } catch(e) {
+      message = 'Bonjour,\n\n' + ent + ' prepare un devis pour un chantier a ' + chantier.ville
+        + ' et souhaite obtenir vos meilleurs prix (rendu chantier) pour : ' + lignesTxt + '.\n'
+        + 'Merci de nous indiquer le prix unitaire HT, le delai de disponibilite et les conditions de livraison.\n\n'
+        + "Dans l'attente de votre retour rapide,\nCordialement,\n" + ent;
+    }
+    demandes.push({
+      fournisseur: g.fournisseur.nom,
+      adresse: g.fournisseur.adresse || '',
+      tel: g.fournisseur.tel || '',
+      dist: g.fournisseur.dist,
+      alternatives: g.alternatives.map(function(a){ return { nom:a.nom, adresse:a.adresse||'', tel:a.tel||'', dist:a.dist }; }),
+      lignes: g.lignes,
+      message: message
+    });
+  }
+  return demandes;
+}
+
+/* --- Mise en pause --- */
+function mettreEnPause(devis, demandes) {
+  devis.statut = 'en_attente_prix';
+  devis.demandes_prix = demandes;
+  devis.prix_recus = {};
+  devis._pause_date = new Date().toLocaleDateString('fr-FR');
+  return devis;
+}
+
+/* --- Saisie d'un prix recu --- */
+function enregistrerPrixRecu(devis, B, code, prixUnitaire) {
+  devis.prix_recus[code] = prixUnitaire;
+  if (B.fournitures[code]) {
+    B.fournitures[code].prix_unitaire = prixUnitaire;
+    B.fournitures[code].prix_a_confirmer = false;
+  }
+  return devis;
+}
+
+/* --- Reprise / recalcul une fois les prix recus --- */
+function reprendreDevis(devis, B, chantier, postesCodes, params) {
+  var recalcule = genererDevisDeterministe(B, chantier, postesCodes, params);
+  recalcule.analyse         = devis.analyse;
+  recalcule.conseils        = devis.conseils;
+  recalcule.arguments_vente = devis.arguments_vente;
+  recalcule.valeur_ajoutee  = devis.valeur_ajoutee;
+  recalcule._id = devis._id; recalcule._date = devis._date;
+  recalcule._client = devis._client; recalcule._ville = devis._ville; recalcule._type = devis._type;
+  recalcule._photo = devis._photo;
+  recalcule._repris_date = new Date().toLocaleDateString('fr-FR');
+  return recalcule;
+}
+
+/* --- BASE AUTO-APPRENANTE --- */
+/* ============================================================
+   prix-auto.js — Base de prix AUTO-APPRENANTE
+   ------------------------------------------------------------
+   Principe : la base ne "devine" pas les prix, elle MEMORISE
+   les vrais prix confirmes par tes fournisseurs (via le workflow
+   demande de prix). Au fil des chantiers elle se remplit seule.
+
+   - chaque prix confirme est stocke avec date + fournisseur
+   - le devis suivant reutilise le dernier prix connu
+   - un prix trop ancien (> PEREMPTION_JOURS) repasse "a confirmer"
+   - persistance : cloud (proxy) + localStorage en secours
+
+   Necessite : PROXY (optionnel), localStorage.
+   ============================================================ */
+
+const PEREMPTION_JOURS = 90;   // au-dela, le prix doit etre reconfirme
+const LS_KEY = 'devistp_prix_history';
+
+/* --- Historique en memoire : { code: [ {prix, fournisseur, ville, date} ... ] } --- */
+let PRIX_HISTORY = {};
+
+/* --- Chargement au demarrage (cloud puis localStorage) --- */
+async function chargerHistoriquePrix() {
+  try {
+    const r = await fetch(PROXY + '/api/prix/all');
+    if (r.ok) { PRIX_HISTORY = await r.json(); persistLocal(); return PRIX_HISTORY; }
+  } catch(e) {}
+  try { PRIX_HISTORY = JSON.parse(localStorage.getItem(LS_KEY) || '{}'); } catch(e) { PRIX_HISTORY = {}; }
+  return PRIX_HISTORY;
+}
+function persistLocal() {
+  try { localStorage.setItem(LS_KEY, JSON.stringify(PRIX_HISTORY)); } catch(e) {}
+}
+
+/* --- Enregistre un prix confirme (appele a la reception fournisseur) --- */
+function memoriserPrix(code, prix, fournisseur, ville) {
+  if (!PRIX_HISTORY[code]) PRIX_HISTORY[code] = [];
+  PRIX_HISTORY[code].unshift({
+    prix: prix, fournisseur: fournisseur || '', ville: ville || '',
+    date: new Date().toISOString().slice(0,10)
+  });
+  PRIX_HISTORY[code] = PRIX_HISTORY[code].slice(0, 20); // on garde les 20 derniers
+  persistLocal();
+  // sync cloud (non bloquant)
+  if (typeof PROXY !== 'undefined') {
+    fetch(PROXY + '/api/prix/save', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ code: code, entree: PRIX_HISTORY[code][0] })
+    }).catch(function(){});
+  }
+}
+
+/* --- Age d'un prix en jours --- */
+function ageJours(dateISO) {
+  return Math.floor((Date.now() - new Date(dateISO).getTime()) / 86400000);
+}
+
+/* --- Dernier prix connu pour un code (tous fournisseurs confondus) --- */
+function dernierPrix(code) {
+  const h = PRIX_HISTORY[code];
+  if (!h || !h.length) return null;
+  const dernier = h[0];
+  return {
+    prix: dernier.prix, fournisseur: dernier.fournisseur, date: dernier.date,
+    age: ageJours(dernier.date), perime: ageJours(dernier.date) > PEREMPTION_JOURS
+  };
+}
+
+/* --- Dernier prix connu PAR FOURNISSEUR pour un materiau ---
+   Renvoie [{fournisseur, prix, date, age, perime}, ...] trie du
+   moins cher au plus cher (prix recents en priorite). */
+function prixParFournisseur(code) {
+  const h = PRIX_HISTORY[code];
+  if (!h || !h.length) return [];
+  const parFour = {};
+  h.forEach(function(e) {
+    const f = e.fournisseur || '?';
+    // on garde l'entree la plus recente par fournisseur (h est deja trie recent->ancien)
+    if (!parFour[f]) parFour[f] = e;
+  });
+  return Object.keys(parFour).map(function(f) {
+    const e = parFour[f];
+    return { fournisseur: f, prix: e.prix, date: e.date,
+             age: ageJours(e.date), perime: ageJours(e.date) > PEREMPTION_JOURS };
+  }).sort(function(a, b) {
+    // non perimes d'abord, puis prix croissant
+    if (a.perime !== b.perime) return a.perime ? 1 : -1;
+    return a.prix - b.prix;
+  });
+}
+
+/* --- Meilleur prix recent (le moins cher non perime) pour un materiau --- */
+function meilleurPrix(code) {
+  const liste = prixParFournisseur(code).filter(function(p){ return !p.perime; });
+  return liste.length ? liste[0] : null;   // deja trie par prix croissant
+}
+
+/* --- SYNCHRONISE le barème avec l'historique appris ---
+   Pour chaque fourniture :
+     - si on a un prix recent  -> on l'applique, prix_a_confirmer = false
+     - si prix perime ou absent -> prix_a_confirmer = true (redeclenche demande)
+   A appeler juste avant chaque generation de devis. */
+function synchroniserBareme(B) {
+  Object.keys(B.fournitures).forEach(function(code) {
+    const best = meilleurPrix(code);              // le moins cher non perime
+    const tous = prixParFournisseur(code);        // pour affichage/choix
+    B.fournitures[code]._prix_fournisseurs = tous;
+    if (best) {
+      B.fournitures[code].prix_unitaire = best.prix;
+      B.fournitures[code].prix_a_confirmer = false;
+      B.fournitures[code]._source = best.fournisseur + ' (' + best.date + ')';
+    } else {
+      // jamais chiffre OU tous les prix perimes -> on redemande
+      B.fournitures[code].prix_a_confirmer = true;
+      const d = dernierPrix(code);
+      if (d) B.fournitures[code]._source = 'perime (' + d.date + ')';
+    }
+  });
+  return B;
+}
+
+/* --- COMPARAISON COUT TOTAL RENDU CHANTIER ---
+   Classe les fournisseurs d'un materiau sur le cout total
+   (matiere + livraison selon LEUR distance au chantier) pour un
+   tonnage donne. Le moins cher rendu n'est pas toujours le moins
+   cher en prix matiere : un fournisseur proche peut gagner.
+   Necessite : CARRIERES_DB, distKm, coutLivraison (moteur), et
+   chantierLat/Lng ou BASE_LAT/LNG comme reference.
+   En mode 'rendu_chantier', la livraison vaut 0 (deja incluse). */
+function comparerFournisseursRendu(B, code, tonnage) {
+  const prix = prixParFournisseur(code);
+  const ref = (typeof chantierLat !== 'undefined' && chantierLat)
+    ? { la: chantierLat, ln: chantierLng } : { la: BASE_LAT, ln: BASE_LNG };
+  return prix.map(function(p) {
+    const car = (typeof CARRIERES_DB !== 'undefined')
+      ? CARRIERES_DB.find(function(c){ return c.nom === p.fournisseur; }) : null;
+    const dist = car ? parseFloat(distKm(ref.la, ref.ln, car.lat, car.lng).toFixed(1)) : null;
+    const matiere = Math.round(tonnage * p.prix);
+    const livraison = (dist != null) ? Math.round(coutLivraison(B, tonnage, dist)) : 0;
+    return Object.assign({}, p, {
+      dist: dist, matiere: matiere, livraison: livraison, total_rendu: matiere + livraison
+    });
+  }).sort(function(a, b) {
+    if (a.perime !== b.perime) return a.perime ? 1 : -1;
+    return a.total_rendu - b.total_rendu;
+  });
+}
+
+/* --- Choix manuel d'un fournisseur pour un materiau ---
+   Force le prix du barème sur celui d'un fournisseur precis
+   (utile quand tu veux garder ton fournisseur habituel meme s'il
+   n'est pas le moins cher). */
+function choisirFournisseur(B, code, fournisseur) {
+  const e = prixParFournisseur(code).find(function(p){ return p.fournisseur === fournisseur; });
+  if (e) {
+    B.fournitures[code].prix_unitaire = e.prix;
+    B.fournitures[code].prix_a_confirmer = false;
+    B.fournitures[code]._source = e.fournisseur + ' (' + e.date + ', choix manuel)';
+  }
+  return B;
+}
+
+/* --- Hook a brancher dans enregistrerPrixRecu pour alimenter l'historique --- */
+function apprendrePrix(code, prix, fournisseur, ville) {
+  memoriserPrix(code, prix, fournisseur, ville);
+}
+
+/* --- CHARGEMENT BARÈME EDITABLE --- */
+let BAREME = null;
+async function chargerBareme() {
+  if (BAREME) return BAREME;
+  try { const r = await fetch(PROXY + '/api/bareme/get'); if (r.ok) { BAREME = await r.json(); persistBaremeLocal(); return BAREME; } } catch(e) {}
+  try { const s = localStorage.getItem('devistp_bareme'); if (s) { BAREME = JSON.parse(s); return BAREME; } } catch(e) {}
+  BAREME = await (await fetch('bareme.json')).json();
+  return BAREME;
+}
+function persistBaremeLocal() { try { localStorage.setItem('devistp_bareme', JSON.stringify(BAREME)); } catch(e) {} }
+function sauvegarderBareme() { persistBaremeLocal(); fetch(PROXY + '/api/bareme/save', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(BAREME) }).catch(function(){}); }
+
 // ── INIT ──
 window.addEventListener('load', function() {
   setTimeout(function() {
@@ -353,6 +1016,8 @@ window.addEventListener('load', function() {
       a.style.display = 'flex'; a.style.flexDirection = 'column';
       loadCfg();
       loadCloud();
+      chargerHistoriquePrix();
+      chargerBareme();
     }, 500);
   }, 1400);
 });
@@ -368,6 +1033,7 @@ function showTab(n) {
   if (n==='history') renderHist();
   if (n==='achats') renderAchats();
   if (n==='mo') renderMO();
+  if (n==='bareme' && BAREME) renderBareme();
 }
 
 // ── PHOTO ──
@@ -432,121 +1098,73 @@ async function rechercherCarrieres() {
 // ── GENERATION DEVIS ──
 async function genererDevis() {
   var btn = document.getElementById('bg'); btn.disabled = true;
-  var tarif = parseFloat(cfg.tarif)||75;
-  var surf = parseFloat(document.getElementById('su').value)||0;
-  var prof = parseFloat(document.getElementById('pr2').value)||0;
-  var vol = parseFloat((surf*prof).toFixed(2));
-  var distC = (chantierLat&&chantierLng) ? parseFloat(distKm(BASE_LAT,BASE_LNG,chantierLat,chantierLng).toFixed(1)) : 15;
-  var coutTrans = coutTransfert(distC);
-  var carrNom = carrieresList.length>0 ? carrieresList[0].nom+'('+carrieresList[0].distChantier+'km)' : 'Carriere Pontcharra';
-
   showL('Analyse du chantier...');
-
-  var data = {
-    type: document.getElementById('tt').value,
-    sol: document.getElementById('ts').value,
-    surf: surf, prof: prof, vol: vol,
-    acces: document.getElementById('ac').value,
-    evac: document.getElementById('ev').value,
-    desc: document.getElementById('de').value,
-    client: document.getElementById('nc').value||'Client',
-    ville: document.getElementById('vc').value||'Gresivaudan',
-    tarif: tarif
-  };
-
-  var imgDesc = '';
-  if (photo) {
-    setLS('Analyse photo...');
-    try {
-      var r = await fetch(PROXY+'/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:200,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:'image/jpeg',data:photo.split(',')[1]}},{type:'text',text:'Decris ce terrain pour terrassement en 2 phrases: sol, etat, acces, contraintes.'}]}]})});
-      var d = await r.json();
-      imgDesc = (d.content&&d.content[0]) ? d.content[0].text : '';
-    } catch(e) {}
-  }
-
-  setLS('Calcul du devis...');
-
-  var prompt = 'Tu es un expert en terrassement TP en France, specialise mini pelle 2T5 dans le Gresivaudan (Isere).'
-    +' CHANTIER: type='+data.type+', sol='+data.sol+', surface='+surf+'m2, profondeur='+prof+'m'
-    +', volume='+vol+'m3, acces='+data.acces+', evacuation='+data.evac
-    +(data.desc?', notes='+data.desc:'')+(imgDesc?', photo='+imgDesc:'')
-    +'. Distance base Haut Breda: '+distC+'km. Carriere proche: '+carrNom+'.'
-
-    +' VITESSES REELLES 2T5 (strictement):'
-    +' terrain meuble: 9m3/h (8 si obstacle/batiment), argile/dur: 6m3/h'
-    +' mise en oeuvre grave: 10T/h compactage inclus'
-    +' mo_heures = quantite/vitesse arrondi quart heure superieur'
-    +' mo_cout = mo_heures x '+tarif+'euros/h'
-
-    +' PRIX MARCHE ISERE 2025 (recherche les vrais prix):'
-    +' - Tout-venant 0/31.5: prix carriere rendu chantier'
-    +' - Grave 0/20: prix carriere rendu chantier'
-    +' - Geotextile 140g/m2: prix fourni pose'
-    +' - Bordurette beton T1: prix ml fourni pose'
-    +' - Sable 0/4: prix T rendu chantier'
-    +' DETAIL PRIX PAR FOURNITURE: prix_unitaire x quantite = sous-total. Indiquer le prix unitaire dans fourniture_detail.'
-
-    +' REGLES POSTES OBLIGATOIRES:'
-    +' 1. Toujours: Transfert et installation en premier (mo_cout='+coutTrans+', fourniture_cout=0)'
-    +' 2. Si decaissage: poste Decaissage avec calcul exact '+vol+'m3/vitesse'
-    +' 3. Si grave ou tout-venant mentionne ou recommande: creer le poste fourniture avec PRIX DETAILLE'
-    +' 4. REGLE CRITIQUE: si tu mentionnes geotextile, bordurette, sable, ou tout materiau dans les conseils,'
-    +' tu DOIS creer un poste dedie avec fourniture_cout calcule (quantite x prix unitaire).'
-    +' Ne jamais mettre un materiau en conseil sans le mettre aussi en poste du devis.'
-    +' 5. Compactage et finitions en dernier'
-    +' 6. Max 7 postes, TVA 20%'
-    +' 7. total_poste = mo_cout + fourniture_cout'
-    +' 8. total_ht = somme tous les totaux'
-
-    +' FORMAT JSON strict (pas de markdown):'
-    +' {"analyse":"description precise",'
-    +'"volume_m3":'+vol+',"difficulte":"Facile|Moderee|Difficile",'
-    +'"postes":[{"nom":"...","detail":"quantite x prix_unitaire = sous-total",'
-    +'"mo_heures":0,"mo_cout":0,"fourniture_detail":"ex: 15T x 12euros/T = 180euros",'
-    +'"fourniture_cout":0,'
-    +'"fiche_tech":{"norme":"ex NF EN 13242","designation":"nom commercial","granulometrie":"0/20mm","usage":"couche de roulement, voirie legere","portance":"CBR>30","drainage":"bon","compactage":"OPM 95% mini","epaisseur_mini":"8cm","avantages":"stable, drainant, esthetique"},'
-    +'"total":0}],'
-    +'"total_ht":0,"tva":0,"total_ttc":0,'
-    +'"conseils":["uniquement des conseils pratiques NON monetaires"],'
-    +'"arguments_vente":['
-    +'  "argument commercial fort mettant en valeur la qualite du travail",'
-    +'  "argument sur la perennite et la valeur ajoutee pour le client",'
-    +'  "argument sur la reactivite et le service local"'
-    +'],'
-    +'"valeur_ajoutee":"phrase courte percutante sur ce que le client gagne avec ce chantier (economie, confort, valorisation bien)",'
-    +'"flux_prompt":"PRESERVE buildings/walls/vehicles/trees/sky. REPLACE ONLY ground with: '
-    +data.type+' finished, compacted '+data.sol+', flat professional TP surface, same photo angle and lighting, photorealistic, no people"}'
-    ;
   try {
-    var resp = await fetch(PROXY+'/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:4000,system:'You are a JSON API. Always respond with raw JSON only, no markdown.',messages:[{role:'user',content:prompt}]})});
-    var d2 = await resp.json();
-    // Extraire uniquement les blocs text (ignorer tool_use, tool_result)
-    var txt = (d2.content||[])
-      .filter(function(i){return i.type==='text';})
-      .map(function(i){return i.text||'';})
-      .join('');
-    // Nettoyer markdown
-    txt = txt.replace(/```json\s*/gi,'').replace(/```\s*/g,'').trim();
-    // Extraire le JSON
-    var s = txt.indexOf('{'), e = txt.lastIndexOf('}');
-    if(s===-1||e===-1) throw new Error('Pas de JSON dans la reponse. Reessayez.');
-    var jsonStr = txt.substring(s,e+1);
-    // Nettoyer les caractères de contrôle qui cassent JSON.parse
-    jsonStr = jsonStr.replace(/[\x00-\x08\x0b\x0c\x0e-\x1f]/g,'');
-    var dv;
-    try { dv = JSON.parse(jsonStr); }
-    catch(parseErr) {
-      // Tentative de récupération : extraire les champs essentiels
-      console.error('JSON parse error:', parseErr.message);
-      console.error('JSON preview:', jsonStr.substring(0,200));
-      throw new Error('Erreur parsing JSON: '+parseErr.message+'. Reessayez.');
+    const B = await chargerBareme();
+    synchroniserBareme(B);
+
+    var tarif = parseFloat(cfg.tarif) || 75;
+    var dist  = (chantierLat && chantierLng) ? parseFloat(distKm(BASE_LAT, BASE_LNG, chantierLat, chantierLng).toFixed(1)) : 15;
+    var chantier = {
+      type: document.getElementById('tt').value, sol: document.getElementById('ts').value,
+      surf: parseFloat(document.getElementById('su').value) || 0,
+      prof: parseFloat(document.getElementById('pr2').value) || 0,
+      acces: document.getElementById('ac').value, evac: document.getElementById('ev').value,
+      desc: document.getElementById('de').value,
+      client: document.getElementById('nc').value || 'Client',
+      ville: document.getElementById('vc').value || 'Gresivaudan',
+      tarif: tarif, dist_km: dist, nature_terre: 'terre'
+    };
+
+    // Postes selon le type + le menu evacuation
+    var postesCodes = postesSelonEvac(B, chantier.type, chantier.evac);
+    var contraintes = [];
+
+    // IA #1 : interpretation photo + description (aucun prix)
+    if (photo || chantier.desc) {
+      setLS('Analyse du terrain...');
+      try {
+        var contenu = [];
+        if (photo) contenu.push({ type:'image', source:{ type:'base64', media_type:'image/jpeg', data:photo.split(',')[1] }});
+        contenu.push({ type:'text', text:
+          'Tu analyses un chantier de terrassement. Postes disponibles: ' + Object.keys(B.fournitures).join(', ')
+          + ', decaissage, decapage, evacuation, regalage, remblai, drain, compactage, tranchee, bordurette.'
+          + ' Type: ' + chantier.type + '. Sol declare: ' + chantier.sol + '.'
+          + (chantier.desc ? ' Notes: ' + chantier.desc : '')
+          + ' Reponds en JSON strict, AUCUN prix: {"postes_ajouter":[],"postes_retirer":[],"nature_terre":"inerte|terre|melange|pollue","contraintes":[]}' });
+        var r1 = await fetch(PROXY + '/api/claude', { method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ model:'claude-sonnet-4-6', max_tokens:500, system:'You are a JSON API. Raw JSON only, no prices.', messages:[{ role:'user', content: contenu }] }) });
+        var dd = await r1.json();
+        var t1 = (dd.content||[]).filter(function(i){return i.type==='text';}).map(function(i){return i.text||'';}).join('');
+        t1 = t1.replace(/```json\s*/gi,'').replace(/```\s*/g,'').trim();
+        var j1 = JSON.parse(t1.substring(t1.indexOf('{'), t1.lastIndexOf('}')+1));
+        (j1.postes_ajouter||[]).forEach(function(c){ if (postesCodes.indexOf(c)===-1) postesCodes.push(c); });
+        postesCodes = postesCodes.filter(function(c){ return (j1.postes_retirer||[]).indexOf(c)===-1; });
+        if (j1.nature_terre) chantier.nature_terre = j1.nature_terre;
+        contraintes = j1.contraintes || [];
+      } catch(e) {}
     }
-    dv._date = new Date().toLocaleDateString('fr-FR');
-    dv._type = data.type; dv._client = data.client; dv._ville = data.ville;
-    dv._photo = photo; dv._id = Date.now();
-    cur = dv; hist.unshift(dv); updateHC();
-    fetch(PROXY+'/api/devis/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(dv)}).catch(function(){});
-    hideL(); afficherEdition(dv); showTab('edit');
+    chantier._contraintes = contraintes;
+
+    // Distance carriere (pour la livraison) = fournisseur le plus proche d'un granulat
+    try { var fp = fournisseursProchesPour('tout_venant_0_31_5','tout-venant',1)[0]; if (fp && fp.dist!=null) chantier.dist_carriere = fp.dist; } catch(e){}
+
+    // MOTEUR : calcul deterministe
+    setLS('Calcul du devis...');
+    var devis = genererDevisDeterministe(B, chantier, postesCodes);
+    devis._date = new Date().toLocaleDateString('fr-FR');
+    devis._type = chantier.type; devis._client = chantier.client; devis._ville = chantier.ville;
+    devis._photo = photo; devis._id = Date.now();
+    devis.flux_prompt = 'PRESERVE buildings/walls/vehicles/trees/sky. REPLACE ONLY ground with: ' + chantier.type + ' finished, compacted ' + chantier.sol + ', flat professional TP surface, same photo angle and lighting, photorealistic, no people';
+
+    if (devis.statut === 'en_attente_prix') {
+      // Des prix fournisseurs sont a confirmer -> onglet Prix
+      cur = devis;
+      await ouvrirOngletPrix(devis, chantier, postesCodes, {});
+    } else {
+      hideL();
+      await finaliserDevis(devis, chantier);
+    }
   } catch(e) {
     hideL();
     document.getElementById('rc').innerHTML = '<div style="background:rgba(220,38,38,.1);border:1px solid rgba(220,38,38,.3);border-radius:12px;padding:16px;margin:16px 0"><div style="font-size:16px;font-weight:600;color:#f87171;margin-bottom:8px">Erreur</div><div style="font-size:13px;color:var(--g4)">'+e.message+'</div><button class="btn bo" style="margin-top:12px" onclick="showTab(\'new\')">Reessayer</button></div>';
@@ -555,44 +1173,44 @@ async function genererDevis() {
   btn.disabled = false;
 }
 
-// ── AFFICHER DEVIS ──
-function afficherDevis(d) {
-  var db = d.difficulte==='Facile'?'bgg':d.difficulte==='Difficile'?'bgr':'bga';
-  var ph = (d.postes||[]).map(function(p) {
-    var haMO = p.mo_cout && Number(p.mo_cout)>0;
-    var haF = p.fourniture_cout && Number(p.fourniture_cout)>0;
-    var det = (haMO?'<span style="font-size:11px;color:var(--g4)">MO: '+Number(p.mo_cout).toFixed(0)+'€</span>':'')
-             +(haMO&&haF?'<span style="font-size:11px;color:var(--g4)"> + </span>':'')
-             +(haF?'<span style="font-size:11px;color:var(--amb)">Fourn: '+Number(p.fourniture_cout).toFixed(0)+'€</span>':'');
-    return '<div class="pr"><div style="flex:1"><div class="pn">'+p.nom+'</div><div class="pd">'+p.detail+'</div>'+(det?'<div style="margin-top:3px">'+det+'</div>':'')+'</div><div style="text-align:right;min-width:80px"><div class="pt">'+Number(p.total).toFixed(0)+' €</div></div></div>';
-  }).join('')||'';
-  var ch = (d.conseils||[]).map(function(c){ return '<div class="ci">'+c+'</div>'; }).join('');
-  var args = (d.arguments_vente||[]).map(function(a,i){
-    var icons = ['🏆','⚡','📍'];
-    return '<div style="display:flex;gap:10px;padding:10px;background:rgba(44,95,46,.1);border-radius:8px;margin-bottom:6px">'
-      +'<span style="font-size:18px;flex-shrink:0">'+icons[i]||'✓'+'</span>'
-      +'<span style="font-size:13px;color:var(--w);line-height:1.4">'+a+'</span>'
-      +'</div>';
-  }).join('');
-  var valeur = d.valeur_ajoutee ? '<div style="background:linear-gradient(135deg,rgba(44,95,46,.3),rgba(61,122,64,.2));border:1px solid rgba(90,158,93,.4);border-radius:10px;padding:14px;margin-bottom:12px;text-align:center"><div style="font-size:11px;color:var(--gl);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Valeur ajoutee</div><div style="font-size:15px;font-weight:600;color:var(--w);line-height:1.4">'+d.valeur_ajoutee+'</div></div>' : '';
-  document.getElementById('rc').innerHTML = ''
-    +'<div class="dhb"><div class="dt">'+d._type+'</div><div class="dm">'+d._client+' — '+d._ville+' — '+d._date+'</div><div class="bgs"><span class="bg bgg">30 jours</span><span class="bg '+db+'">'+d.difficulte+'</span></div></div>'
-    +(d._photo?'<div style="margin-bottom:12px;border-radius:12px;overflow:hidden"><img src="'+d._photo+'" style="width:100%;max-height:180px;object-fit:cover;display:block"></div>':'')
-    +'<p style="font-size:13px;color:var(--g4);margin-bottom:12px;line-height:1.6">'+d.analyse+'</p>'
-    +'<div class="ms"><div class="mt"><div class="mv">'+d.volume_m3+'</div><div class="ml">m3</div></div><div class="mt"><div class="mv">'+d.difficulte+'</div><div class="ml">Difficulte</div></div><div class="mt"><div class="mv">'+Number(d.total_ttc).toFixed(0)+'€</div><div class="ml">TTC</div></div></div>'
-    +'<div class="card"><div class="ct">Detail postes</div>'+ph+'<div class="tx" style="margin-top:12px"><div class="tr"><span>Total HT</span><span>'+Number(d.total_ht).toFixed(2)+' €</span></div><div class="tr"><span>TVA 20%</span><span>'+Number(d.tva).toFixed(2)+' €</span></div><div class="tf"><span>Total TTC</span><span>'+Number(d.total_ttc).toFixed(2)+' €</span></div></div></div>'
-    +valeur
-    +(args?'<div class="card"><div class="ct" style="color:var(--amb)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>Arguments de vente</div>'+args+'</div>':'')
-    +(ch?'<div class="card"><div class="ct">Conseils pratiques</div>'+ch+'</div>':'')
-    +(d._photo?'<div class="rb"><div style="font-family:Barlow Condensed,sans-serif;font-size:18px;font-weight:700;color:var(--amb);margin-bottom:6px">Simulation rendu Flux IA</div><div style="font-size:13px;color:var(--g4);margin-bottom:12px">Flux IA remplace le sol sur votre photo.</div><div id="rp" style="display:none;text-align:center;padding:16px"><div class="sp" style="margin:0 auto 8px"></div><div id="rpmsg" style="font-size:13px;color:var(--g4)">Generation...</div></div><div id="rr" style="display:none;margin-bottom:12px"><div style="font-size:11px;color:var(--gl);margin-bottom:8px">Rendu genere !</div><img id="ri" style="width:100%;border-radius:10px;display:block"></div><button class="btn ba" id="btnr" onclick="genRendu()">Generer le rendu IA</button></div>':'')
-    +'<button class="btn bp" onclick="exportPDF()">Telecharger PDF</button>'
-    +'<button class="btn bo" onclick="partager()">Partager</button>'
-    +'<button class="btn bo" onclick="showTab(\'achats\')">Fournitures</button>'
-    +'<button class="btn bo" onclick="showTab(\'mo\')">Main oeuvre</button>'
-    +'<button class="btn bo" onclick="showTab(\'new\')">Nouveau devis</button>';
+/* Redaction commerciale (IA #2) a partir des chiffres deja calcules */
+async function redigerDevis(devis, chantier) {
+  var resume = devis.postes.map(function(p){ return p.nom + ' = ' + p.total + 'EUR'; }).join(' ; ');
+  try {
+    var r = await fetch(PROXY + '/api/claude', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ model:'claude-sonnet-4-6', max_tokens:800, system:'You are a JSON API. Raw JSON only. Tu ne modifies AUCUN chiffre.',
+        messages:[{ role:'user', content:
+          'Expert terrassement TP Gresivaudan (Isere), mini pelle 2T5. Chantier: ' + chantier.type + ', sol ' + chantier.sol
+          + ', ' + chantier.surf + 'm2, volume ' + devis.volume_m3 + 'm3, total HT ' + devis.total_ht + 'EUR. Postes: ' + resume + '.'
+          + ((chantier._contraintes&&chantier._contraintes.length) ? ' Contraintes: ' + chantier._contraintes.join(', ') + '.' : '')
+          + ' Redige en JSON strict (aucun prix invente): {"analyse":"2 phrases","conseils":["3 conseils non monetaires"],"arguments_vente":["qualite","perennite","reactivite locale"],"valeur_ajoutee":"1 phrase"}' }] }) });
+    var d = await r.json();
+    var t = (d.content||[]).filter(function(i){return i.type==='text';}).map(function(i){return i.text||'';}).join('');
+    t = t.replace(/```json\s*/gi,'').replace(/```\s*/g,'').trim();
+    var j = JSON.parse(t.substring(t.indexOf('{'), t.lastIndexOf('}')+1));
+    devis.analyse = j.analyse; devis.conseils = j.conseils; devis.arguments_vente = j.arguments_vente; devis.valeur_ajoutee = j.valeur_ajoutee;
+  } catch(e) {
+    devis.analyse = chantier.type + ' sur ' + chantier.surf + 'm2, sol ' + chantier.sol + '.';
+    devis.conseils = (chantier._contraintes&&chantier._contraintes.length) ? chantier._contraintes : ['Prevoir une visite technique avant travaux.'];
+    devis.arguments_vente = ['Travail soigne aux normes', 'Materiaux de qualite, ouvrage durable', 'Entreprise locale reactive'];
+    devis.valeur_ajoutee = "Un terrain pret a l'emploi, realise dans les regles de l'art.";
+  }
+  return devis;
 }
 
-// ── RENDU FLUX ──
+/* Finalisation : redaction + sauvegarde + affichage edition */
+async function finaliserDevis(devis, chantier) {
+  showL('Redaction...');
+  await redigerDevis(devis, chantier);
+  hideL();
+  cur = devis;
+  if (hist.indexOf(devis) === -1) hist.unshift(devis);
+  updateHC();
+  fetch(PROXY + '/api/devis/save', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(devis) }).catch(function(){});
+  afficherEdition(devis); showTab('edit');
+}
+
+
 async function genRendu() {
   if (!cur||!cur._photo) return;
   document.getElementById('rp').style.display='block';
