@@ -1,0 +1,183 @@
+{
+  "_version": "1.0",
+  "_note": "BASE DE PRIX DevisTP — Remplis chaque valeur avec TES vrais chiffres Isere. Les valeurs ci-dessous sont des ORDRES DE GRANDEUR a verifier/ajuster. Tout le calcul s'appuie la-dessus : si une valeur est juste, le devis est juste.",
+  "sols": {
+    "vegetale": {
+      "libelle": "Terre vegetale",
+      "foisonnement": 1.25,
+      "densite_Tm3": 1.5,
+      "rendement_2t5_m3h": 9
+    },
+    "argile": {
+      "libelle": "Argile / limon",
+      "foisonnement": 1.3,
+      "densite_Tm3": 1.8,
+      "rendement_2t5_m3h": 6
+    },
+    "mixte": {
+      "libelle": "Mixte / gravats",
+      "foisonnement": 1.35,
+      "densite_Tm3": 1.7,
+      "rendement_2t5_m3h": 6
+    },
+    "grave": {
+      "libelle": "Grave / sable",
+      "foisonnement": 1.15,
+      "densite_Tm3": 1.9,
+      "rendement_2t5_m3h": 8
+    },
+    "rocheux": {
+      "libelle": "Rocheux / dur",
+      "foisonnement": 1.5,
+      "densite_Tm3": 2.2,
+      "rendement_2t5_m3h": 3
+    }
+  },
+  "_note_sols": "foisonnement = coef d'augmentation du volume une fois excave (pilote l'evacuation). densite_Tm3 = tonnes par m3 en place (pilote tonnage decharge). rendement = m3/h excaves par la 2T5 EN ACCES FACILE (le coef d'acces s'applique ensuite).",
+  "acces": {
+    "facile": {
+      "libelle": "Facile (+3m)",
+      "coef_rendement": 1.0
+    },
+    "moyen": {
+      "libelle": "Moyen (2-3m)",
+      "coef_rendement": 0.75
+    },
+    "difficile": {
+      "libelle": "Difficile (-2m)",
+      "coef_rendement": 0.5
+    }
+  },
+  "_note_acces": "coef_rendement multiplie le rendement de l'engin. Acces difficile = 2x plus lent = 2x plus cher en MO.",
+  "evacuation": {
+    "capacite_camion_m3": 8,
+    "cout_rotation_base": 60,
+    "cout_rotation_par_km": 1.8,
+    "tarif_decharge_Ttonne": {
+      "inerte": 18,
+      "terre": 12,
+      "melange": 25,
+      "pollue": 90
+    }
+  },
+  "_note_evacuation": "rotations = ceil(volume_foisonne / capacite_camion). cout transport = rotations x (cout_rotation_base + dist_km x cout_rotation_par_km). cout decharge = tonnage x tarif_decharge selon nature. Mets a jour avec les tarifs reels de TES decharges/ISDI.",
+  "transfert": {
+    "forfait_base": 75,
+    "cout_par_km": 3.0
+  },
+  "_note_transfert": "Amenee/repli engin. cout = forfait_base + dist_km x cout_par_km (aller-retour deja integre dans le coef).",
+  "fournitures": {
+    "tout_venant_0_31_5": {
+      "libelle": "Tout-venant 0/31.5",
+      "unite": "T",
+      "prix_unitaire": 16,
+      "densite_Tm3": 1.9,
+      "norme": "NF EN 13242",
+      "prix_a_confirmer": true
+    },
+    "grave_0_20": {
+      "libelle": "Grave 0/20",
+      "unite": "T",
+      "prix_unitaire": 19,
+      "densite_Tm3": 1.9,
+      "norme": "NF EN 13242",
+      "prix_a_confirmer": true
+    },
+    "sable_0_4": {
+      "libelle": "Sable 0/4",
+      "unite": "T",
+      "prix_unitaire": 22,
+      "densite_Tm3": 1.6,
+      "norme": "NF EN 13139",
+      "prix_a_confirmer": true
+    },
+    "geotextile_140": {
+      "libelle": "Geotextile 140g/m2",
+      "unite": "m2",
+      "prix_unitaire": 2.5,
+      "norme": "NF EN ISO 10319"
+    },
+    "bordurette_T1": {
+      "libelle": "Bordurette beton T1",
+      "unite": "ml",
+      "prix_unitaire": 14,
+      "norme": "NF EN 1340"
+    },
+    "drain_100": {
+      "libelle": "Drain agricole D100",
+      "unite": "ml",
+      "prix_unitaire": 3.5
+    }
+  },
+  "_note_fournitures": "prix_unitaire = prix RENDU CHANTIER (transport carriere inclus). Pour les materiaux en T, densite_Tm3 sert a convertir un volume (m3) en tonnage a commander.",
+  "postes_par_type": {
+    "Acces garage / entree": [
+      "transfert",
+      "decaissage",
+      "geotextile",
+      "grave",
+      "compactage"
+    ],
+    "Terrassement general": [
+      "transfert",
+      "decaissage",
+      "evacuation",
+      "regalage"
+    ],
+    "Creation de mare": [
+      "transfert",
+      "decaissage",
+      "evacuation",
+      "geotextile"
+    ],
+    "Drainage / VRD": [
+      "transfert",
+      "tranchee",
+      "drain",
+      "grave",
+      "remblai"
+    ],
+    "Nivellement terrain": [
+      "transfert",
+      "decapage",
+      "regalage",
+      "compactage"
+    ],
+    "Tranchee reseaux": [
+      "transfert",
+      "tranchee",
+      "sable",
+      "remblai"
+    ],
+    "Assainissement": [
+      "transfert",
+      "tranchee",
+      "evacuation",
+      "sable",
+      "remblai"
+    ],
+    "Plateforme / parking": [
+      "transfert",
+      "decaissage",
+      "evacuation",
+      "geotextile",
+      "tout_venant",
+      "compactage"
+    ]
+  },
+  "_note_postes": "Pour chaque type de chantier, liste des postes a generer par defaut. C'est ce que l'IA peut ajuster selon la description/photo, mais le calcul de chaque poste reste deterministe.",
+  "main_oeuvre": {
+    "rendement_grave_Th": 10,
+    "_note": "rendement_grave_Th = tonnes de grave mises en oeuvre + compactees par heure. Sert a chiffrer la MO de mise en oeuvre des fournitures."
+  },
+  "_note_prix_a_confirmer": "prix_a_confirmer:true -> le poste est marque provisoire, le devis passe en attente, une demande de prix fournisseur est generee. Passe a false (ou enregistrePrixRecu) une fois le prix confirme.",
+  "mode_prix_materiaux": "depart_carriere",
+  "_note_mode_prix": "'depart_carriere' = prix matiere SANS transport + ligne livraison calculee a part (recommande : prix matiere reutilisable partout). 'rendu_chantier' = transport inclus dans le prix unitaire (simple mais valable seulement a distance equivalente).",
+  "livraison": {
+    "cout_Tkm": 0.18,
+    "forfait_mini": 45,
+    "_note": "Livraison granulats. cout = max(forfait_mini, tonnage x distance_carriere_km x cout_Tkm). Ajuste cout_Tkm avec ton vrai cout de transport benne/camion par tonne et par km."
+  },
+  "coef_fourniture": 1.5,
+  "_note_coef_fourniture": "Coefficient applique au prix matiere HT pour couvrir la TVA non recuperee (micro, achat TTC) ET les charges sur le CA. 1.50 = x1.20 (TVA) / 0.80 (charges 20% CA). Ajuste selon ton vrai taux de charges. Mettre 1 pour vendre a prix coutant."
+}
