@@ -1027,6 +1027,19 @@ async function rechercherCarrieres() {
 }
 
 // ── GENERATION DEVIS ──
+// Choisit les postes selon le type de chantier + le menu evacuation
+function postesSelonEvac(B, type, evac) {
+  var codes = (B.postes_par_type[type] || ["transfert", "decaissage", "evacuation"]).slice();
+  var e = (evac || '').toLowerCase();
+  if (e.indexOf('regalage') !== -1 || e.indexOf('place') !== -1) {
+    codes = codes.filter(function(c){ return c !== 'evacuation'; });
+    if (codes.indexOf('regalage') === -1) codes.push('regalage');
+  } else if (e.indexOf('client') !== -1) {
+    codes = codes.filter(function(c){ return c !== 'evacuation'; });
+  }
+  return codes;
+}
+
 async function genererDevis() {
   var btn = document.getElementById('bg'); btn.disabled = true;
   showL('Analyse du chantier...');
