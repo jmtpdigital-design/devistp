@@ -10,85 +10,7 @@
 <title>DevisTP</title>
 <link rel="manifest" href="manifest.json">
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js">
-/* ====== CABLAGE ONGLET PRIX ====== */
-var _prixChantier=null,_prixCodes=null,_prixParams=null;
-async function ouvrirOngletPrix(devis, chantier, postesCodes, params) {
-  _prixChantier=chantier; _prixCodes=postesCodes; _prixParams=params||{};
-  document.getElementById('n-prix').style.display='';
-  var dem = await genererDemandesPrix(devis, chantier);
-  mettreEnPause(devis, dem);
-  cur = devis; hideL();
-  renderOngletPrix(devis); showTab('prix');
-}
-function renderOngletPrix(devis) {
-  var nb=(devis.demandes_prix||[]).reduce(function(s,d){return s+d.lignes.length;},0);
-  document.getElementById('prix-banniere').innerHTML='<div style="background:rgba(245,159,10,.1);border:1px solid rgba(245,159,10,.3);border-radius:12px;padding:10px 12px;margin-bottom:12px;font-size:13px;color:#f5c98a">Devis en pause — '+nb+' prix fournisseur a confirmer</div>';
-  document.getElementById('prix-demandes').innerHTML=(devis.demandes_prix||[]).map(function(d,i){
-    var alts=(d.alternatives||[]).map(function(a){return '<div style="font-size:12px;color:#cdd3cd;margin-top:3px">&#8627; '+a.nom+' &middot; '+a.dist+' km'+(a.adresse?' — '+a.adresse:'')+'</div>';}).join('');
-    return '<div class="card"><div class="ct">'+d.fournisseur+(d.dist!=null?' <span style="color:#f59f0a">&middot; '+d.dist+' km</span>':'')+'</div>'
-      +(d.adresse?'<div style="font-size:12px;color:var(--g4)">'+d.adresse+'</div>':'')
-      +(d.tel?'<div style="font-size:12px;color:var(--g4);margin-bottom:8px">'+d.tel+'</div>':'')
-      +'<div style="font-size:12px;color:#cdd3cd;background:rgba(255,255,255,.04);border-radius:8px;padding:6px 8px;margin-bottom:8px">'+d.lignes.map(function(l){return l.quantite+' '+l.unite+' '+l.libelle;}).join('<br>')+'</div>'
-      +'<textarea id="dp-'+i+'" style="width:100%;height:120px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:9px;color:var(--w);font-family:Barlow,sans-serif;font-size:12.5px;resize:none">'+d.message+'</textarea>'
-      +'<div style="display:flex;gap:8px;margin-top:8px"><button class="pb" style="flex:1;background:var(--g)" onclick="copierDemande('+i+')">Copier</button>'
-      +(d.tel?'<a class="pb" style="flex:1;background:var(--gm);text-decoration:none;text-align:center" href="tel:'+d.tel.replace(/\s/g,'')+'">Appeler</a>':'')+'</div>'
-      +(alts?'<div style="margin-top:10px;border-top:1px solid rgba(255,255,255,.06);padding-top:8px"><div style="font-size:11px;color:var(--g4);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Autres a proximite</div>'+alts+'</div>':'')
-      +'</div>';
-  }).join('');
-  var fournitures=collecterFournituresAChiffrer(devis);
-  document.getElementById('prix-saisie').innerHTML='<div class="card" style="border-color:rgba(90,158,93,.4)"><div class="ct">Saisir les prix recus</div>'
-    +fournitures.map(function(f){return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><span style="flex:1;font-size:12.5px;color:#cdd3cd">'+f.libelle+' (EUR/'+f.unite+')</span><input type="number" id="pr-'+f.code+'" step="0.1" min="0" placeholder="?" style="width:80px;background:rgba(255,255,255,.06);border:1px solid rgba(90,158,93,.4);border-radius:8px;padding:7px;color:var(--w);font-family:Barlow,sans-serif;font-size:14px"></div>';}).join('')
-    +'<button class="btn" style="width:100%;background:var(--gl);color:var(--gd);font-weight:700;border:none;padding:11px;border-radius:9px" onclick="reprendreDevisDepuisPrix()">Reprendre le devis</button></div>';
-}
-function copierDemande(i){var el=document.getElementById('dp-'+i);if(el){navigator.clipboard.writeText(el.value);if(window.showT)showT('Copie');}}
-async function reprendreDevisDepuisPrix(){
-  var fournitures=collecterFournituresAChiffrer(cur);
-  var fourMap={}; (cur.demandes_prix||[]).forEach(function(d){ d.lignes.forEach(function(l){ fourMap[l.code]=d.fournisseur; }); });
-  fournitures.forEach(function(f){
-    var v=parseFloat(document.getElementById('pr-'+f.code).value);
-    if(!isNaN(v)&&v>0){ enregistrerPrixRecu(cur,BAREME,f.code,v); apprendrePrix(f.code,v,fourMap[f.code]||'',_prixChantier.ville); }
-  });
-  var devisFinal=reprendreDevis(cur,BAREME,_prixChantier,_prixCodes,_prixParams);
-  cur=devisFinal;
-  if(devisFinal.statut==='valide'){
-    document.getElementById('n-prix').style.display='none';
-    await finaliserDevis(cur,_prixChantier);
-  } else { renderOngletPrix(cur); }
-}
-
-/* ====== CABLAGE ONGLET BARÈME ====== */
-async function ouvrirBareme(){ await chargerBareme(); renderBareme(); showTab('bareme'); }
-function _inp(id,val,step){return '<input id="'+id+'" type="number" step="'+(step||'0.01')+'" value="'+(val!=null?val:'')+'" style="width:90px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:7px;padding:6px;color:var(--w);font-family:Barlow,sans-serif;font-size:13.5px;text-align:right">';}
-function _txt(id,val){return '<input id="'+id+'" type="text" value="'+(val||'')+'" style="flex:1;min-width:90px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:7px;padding:6px;color:var(--w);font-family:Barlow,sans-serif;font-size:13px">';}
-function _row(label,h){return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span style="flex:1;font-size:13px;color:#cdd3cd">'+label+'</span>'+h+'</div>';}
-function renderBareme(){
-  var B=BAREME,h='';
-  h+='<div class="card"><div class="ct">Fournitures (prix unitaire)</div>';
-  Object.keys(B.fournitures).forEach(function(code){var f=B.fournitures[code];var src=f._source?'<div style="font-size:11px;color:var(--g4)">appris : '+f._source+'</div>':'';
-    h+='<div style="border-bottom:1px solid rgba(255,255,255,.06);padding:8px 0"><div style="display:flex;gap:8px;align-items:center;margin-bottom:6px">'+_txt('bf-lib-'+code,f.libelle)+'</div><div style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:#cdd3cd">Prix '+_inp('bf-prix-'+code,f.prix_unitaire)+' EUR/'+(f.unite||'U')+(f.densite_Tm3!=null?' &middot; densite '+_inp('bf-dens-'+code,f.densite_Tm3,'0.01')+' T/m3':'')+'</div><label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--g4);margin-top:5px"><input type="checkbox" id="bf-conf-'+code+'"'+(f.prix_a_confirmer?' checked':'')+'> a confirmer</label>'+src+'</div>';});
-  h+='<button class="pb" style="background:var(--g);margin-top:10px;width:100%" onclick="ajouterFourniture()">+ Ajouter une fourniture</button></div>';
-  h+='<div class="card"><div class="ct">Sols (foisonnement / densite / rendement 2T5)</div>';
-  Object.keys(B.sols).forEach(function(s){var sol=B.sols[s];h+='<div style="border-bottom:1px solid rgba(255,255,255,.06);padding:8px 0"><div style="font-size:13px;font-weight:600;color:#5a9e5d;margin-bottom:6px">'+sol.libelle+'</div><div style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:#cdd3cd">foisonnt '+_inp('bs-foi-'+s,sol.foisonnement,'0.01')+' &middot; densite '+_inp('bs-den-'+s,sol.densite_Tm3,'0.01')+' &middot; rdt '+_inp('bs-rdt-'+s,sol.rendement_2t5_m3h,'0.5')+' m3/h</div></div>';});
-  h+='</div>';
-  h+='<div class="card"><div class="ct">Livraison &amp; transport</div>'+_row('Mode prix matiere','<select id="bm-mode" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:7px;padding:6px;color:var(--w);font-size:13px"><option value="depart_carriere"'+(B.mode_prix_materiaux==='depart_carriere'?' selected':'')+'>Depart carriere</option><option value="rendu_chantier"'+(B.mode_prix_materiaux==='rendu_chantier'?' selected':'')+'>Rendu chantier</option></select>')+_row('Marge fournitures (x prix HT)',_inp('bcoef',B.coef_fourniture||1,'0.01'))+_row('Livraison (EUR/T/km)',_inp('bl-tkm',B.livraison.cout_Tkm,'0.01'))+_row('Forfait mini livraison',_inp('bl-min',B.livraison.forfait_mini,'1'))+_row('Transfert engin (forfait)',_inp('bt-base',B.transfert.forfait_base,'1'))+_row('Transfert (EUR/km)',_inp('bt-km',B.transfert.cout_par_km,'0.1'))+'</div>';
-  h+='<div class="card"><div class="ct">Evacuation</div>'+_row('Capacite camion (m3)',_inp('be-cap',B.evacuation.capacite_camion_m3,'0.5'))+_row('Rotation (forfait)',_inp('be-rot',B.evacuation.cout_rotation_base,'1'))+_row('Rotation (EUR/km)',_inp('be-km',B.evacuation.cout_rotation_par_km,'0.1'));
-  Object.keys(B.evacuation.tarif_decharge_Ttonne).forEach(function(t){h+=_row('Decharge '+t+' (EUR/T)',_inp('be-dec-'+t,B.evacuation.tarif_decharge_Ttonne[t],'1'));});
-  h+=_row('Rendt pose grave (T/h)',_inp('bmo-grave',B.main_oeuvre.rendement_grave_Th,'0.5'))+'</div>';
-  h+='<button class="btn" style="width:100%;background:var(--gl);color:var(--gd);font-weight:700;border:none;padding:13px;border-radius:10px;margin-top:6px" onclick="enregistrerBareme()">Enregistrer le barème</button>';
-  document.getElementById('bareme-contenu').innerHTML=h;
-}
-function ajouterFourniture(){var code=prompt('Code interne (sans espace, ex: gnt_0_80)');if(!code)return;code=code.trim().replace(/[^a-z0-9_]/gi,'_').toLowerCase();if(BAREME.fournitures[code]){alert('Ce code existe deja');return;}BAREME.fournitures[code]={libelle:'Nouveau materiau',unite:'T',prix_unitaire:0,densite_Tm3:1.8,prix_a_confirmer:true};renderBareme();}
-function enregistrerBareme(){var B=BAREME;
-  Object.keys(B.fournitures).forEach(function(code){var f=B.fournitures[code];var lib=document.getElementById('bf-lib-'+code);if(lib)f.libelle=lib.value;var p=document.getElementById('bf-prix-'+code);if(p)f.prix_unitaire=parseFloat(p.value)||0;var dn=document.getElementById('bf-dens-'+code);if(dn)f.densite_Tm3=parseFloat(dn.value)||f.densite_Tm3;var cf=document.getElementById('bf-conf-'+code);if(cf)f.prix_a_confirmer=cf.checked;});
-  Object.keys(B.sols).forEach(function(s){B.sols[s].foisonnement=parseFloat(document.getElementById('bs-foi-'+s).value)||B.sols[s].foisonnement;B.sols[s].densite_Tm3=parseFloat(document.getElementById('bs-den-'+s).value)||B.sols[s].densite_Tm3;B.sols[s].rendement_2t5_m3h=parseFloat(document.getElementById('bs-rdt-'+s).value)||B.sols[s].rendement_2t5_m3h;});
-  B.mode_prix_materiaux=document.getElementById('bm-mode').value;B.coef_fourniture=parseFloat(document.getElementById('bcoef').value)||1;B.livraison.cout_Tkm=parseFloat(document.getElementById('bl-tkm').value)||B.livraison.cout_Tkm;B.livraison.forfait_mini=parseFloat(document.getElementById('bl-min').value)||0;B.transfert.forfait_base=parseFloat(document.getElementById('bt-base').value)||B.transfert.forfait_base;B.transfert.cout_par_km=parseFloat(document.getElementById('bt-km').value)||B.transfert.cout_par_km;B.evacuation.capacite_camion_m3=parseFloat(document.getElementById('be-cap').value)||B.evacuation.capacite_camion_m3;B.evacuation.cout_rotation_base=parseFloat(document.getElementById('be-rot').value)||B.evacuation.cout_rotation_base;B.evacuation.cout_rotation_par_km=parseFloat(document.getElementById('be-km').value)||B.evacuation.cout_rotation_par_km;
-  Object.keys(B.evacuation.tarif_decharge_Ttonne).forEach(function(t){B.evacuation.tarif_decharge_Ttonne[t]=parseFloat(document.getElementById('be-dec-'+t).value)||0;});
-  B.main_oeuvre.rendement_grave_Th=parseFloat(document.getElementById('bmo-grave').value)||B.main_oeuvre.rendement_grave_Th;
-  sauvegarderBareme();if(window.showT)showT('Barème enregistre');else alert('Barème enregistre');
-}
-
-</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 :root{--gd:#0f1a0f;--gdp:#1a2e1a;--g:#2c5f2e;--gm:#3d7a40;--gl:#5a9e5d;--amb:#f59f0a;--w:#fff;--g4:#9ca3af;--g8:#1f2937;--red:#dc2626;--r:12px;--rs:8px}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -380,6 +302,7 @@ header h1 span{color:var(--gl)}
       <div id="prix-saisie"></div>
     </div>
     <div class="sc" id="sc-bareme"><div id="bareme-contenu"></div></div>
+    <div class="sc" id="sc-chantiers"><div id="chantiers-content"></div></div>
   <div class="bn">
     <button class="active" id="n-new" onclick="showTab('new')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>Nouveau</button>
     <button id="n-result" onclick="goResult()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Devis</button>
@@ -393,6 +316,7 @@ header h1 span{color:var(--gl)}
     <button id="n-settings" onclick="showTab('settings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>Reglages</button>
     <button id="n-prix" onclick="showTab('prix')" style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>Prix</button>
     <button id="n-bareme" onclick="ouvrirBareme()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h18v4H3zM3 10h18v4H3zM3 17h18v4H3z"/></svg>Barème</button>
+    <button id="n-chantiers" onclick="ouvrirChantiersListe()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 20h20M5 20V8l7-5 7 5v12M9 20v-6h6v6"/></svg>Chantiers</button>
   </div>
 </div>
 <script>
@@ -996,11 +920,17 @@ function apprendrePrix(code, prix, fournisseur, ville) {
 
 /* --- CHARGEMENT BARÈME EDITABLE --- */
 let BAREME = null;
+const BAREME_DEFAUT = "{\"_version\": \"1.0\", \"_note\": \"BASE DE PRIX DevisTP — Remplis chaque valeur avec TES vrais chiffres Isere. Les valeurs ci-dessous sont des ORDRES DE GRANDEUR a verifier/ajuster. Tout le calcul s'appuie la-dessus : si une valeur est juste, le devis est juste.\", \"sols\": {\"vegetale\": {\"libelle\": \"Terre vegetale\", \"foisonnement\": 1.25, \"densite_Tm3\": 1.5, \"rendement_2t5_m3h\": 9}, \"argile\": {\"libelle\": \"Argile / limon\", \"foisonnement\": 1.3, \"densite_Tm3\": 1.8, \"rendement_2t5_m3h\": 6}, \"mixte\": {\"libelle\": \"Mixte / gravats\", \"foisonnement\": 1.35, \"densite_Tm3\": 1.7, \"rendement_2t5_m3h\": 6}, \"grave\": {\"libelle\": \"Grave / sable\", \"foisonnement\": 1.15, \"densite_Tm3\": 1.9, \"rendement_2t5_m3h\": 8}, \"rocheux\": {\"libelle\": \"Rocheux / dur\", \"foisonnement\": 1.5, \"densite_Tm3\": 2.2, \"rendement_2t5_m3h\": 3}}, \"_note_sols\": \"foisonnement = coef d'augmentation du volume une fois excave (pilote l'evacuation). densite_Tm3 = tonnes par m3 en place (pilote tonnage decharge). rendement = m3/h excaves par la 2T5 EN ACCES FACILE (le coef d'acces s'applique ensuite).\", \"acces\": {\"facile\": {\"libelle\": \"Facile (+3m)\", \"coef_rendement\": 1.0}, \"moyen\": {\"libelle\": \"Moyen (2-3m)\", \"coef_rendement\": 0.75}, \"difficile\": {\"libelle\": \"Difficile (-2m)\", \"coef_rendement\": 0.5}}, \"_note_acces\": \"coef_rendement multiplie le rendement de l'engin. Acces difficile = 2x plus lent = 2x plus cher en MO.\", \"evacuation\": {\"capacite_camion_m3\": 8, \"cout_rotation_base\": 60, \"cout_rotation_par_km\": 1.8, \"tarif_decharge_Ttonne\": {\"inerte\": 18, \"terre\": 12, \"melange\": 25, \"pollue\": 90}}, \"_note_evacuation\": \"rotations = ceil(volume_foisonne / capacite_camion). cout transport = rotations x (cout_rotation_base + dist_km x cout_rotation_par_km). cout decharge = tonnage x tarif_decharge selon nature. Mets a jour avec les tarifs reels de TES decharges/ISDI.\", \"transfert\": {\"forfait_base\": 75, \"cout_par_km\": 3.0}, \"_note_transfert\": \"Amenee/repli engin. cout = forfait_base + dist_km x cout_par_km (aller-retour deja integre dans le coef).\", \"fournitures\": {\"tout_venant_0_31_5\": {\"libelle\": \"Tout-venant 0/31.5\", \"unite\": \"T\", \"prix_unitaire\": 16, \"densite_Tm3\": 1.9, \"norme\": \"NF EN 13242\", \"prix_a_confirmer\": true}, \"grave_0_20\": {\"libelle\": \"Grave 0/20\", \"unite\": \"T\", \"prix_unitaire\": 19, \"densite_Tm3\": 1.9, \"norme\": \"NF EN 13242\", \"prix_a_confirmer\": true}, \"sable_0_4\": {\"libelle\": \"Sable 0/4\", \"unite\": \"T\", \"prix_unitaire\": 22, \"densite_Tm3\": 1.6, \"norme\": \"NF EN 13139\", \"prix_a_confirmer\": true}, \"geotextile_140\": {\"libelle\": \"Geotextile 140g/m2\", \"unite\": \"m2\", \"prix_unitaire\": 2.5, \"norme\": \"NF EN ISO 10319\"}, \"bordurette_T1\": {\"libelle\": \"Bordurette beton T1\", \"unite\": \"ml\", \"prix_unitaire\": 14, \"norme\": \"NF EN 1340\"}, \"drain_100\": {\"libelle\": \"Drain agricole D100\", \"unite\": \"ml\", \"prix_unitaire\": 3.5}}, \"_note_fournitures\": \"prix_unitaire = prix RENDU CHANTIER (transport carriere inclus). Pour les materiaux en T, densite_Tm3 sert a convertir un volume (m3) en tonnage a commander.\", \"postes_par_type\": {\"Acces garage / entree\": [\"transfert\", \"decaissage\", \"geotextile\", \"grave\", \"compactage\"], \"Terrassement general\": [\"transfert\", \"decaissage\", \"evacuation\", \"regalage\"], \"Creation de mare\": [\"transfert\", \"decaissage\", \"evacuation\", \"geotextile\"], \"Drainage / VRD\": [\"transfert\", \"tranchee\", \"drain\", \"grave\", \"remblai\"], \"Nivellement terrain\": [\"transfert\", \"decapage\", \"regalage\", \"compactage\"], \"Tranchee reseaux\": [\"transfert\", \"tranchee\", \"sable\", \"remblai\"], \"Assainissement\": [\"transfert\", \"tranchee\", \"evacuation\", \"sable\", \"remblai\"], \"Plateforme / parking\": [\"transfert\", \"decaissage\", \"evacuation\", \"geotextile\", \"tout_venant\", \"compactage\"]}, \"_note_postes\": \"Pour chaque type de chantier, liste des postes a generer par defaut. C'est ce que l'IA peut ajuster selon la description/photo, mais le calcul de chaque poste reste deterministe.\", \"main_oeuvre\": {\"rendement_grave_Th\": 10, \"_note\": \"rendement_grave_Th = tonnes de grave mises en oeuvre + compactees par heure. Sert a chiffrer la MO de mise en oeuvre des fournitures.\"}, \"_note_prix_a_confirmer\": \"prix_a_confirmer:true -> le poste est marque provisoire, le devis passe en attente, une demande de prix fournisseur est generee. Passe a false (ou enregistrePrixRecu) une fois le prix confirme.\", \"mode_prix_materiaux\": \"depart_carriere\", \"_note_mode_prix\": \"'depart_carriere' = prix matiere SANS transport + ligne livraison calculee a part (recommande : prix matiere reutilisable partout). 'rendu_chantier' = transport inclus dans le prix unitaire (simple mais valable seulement a distance equivalente).\", \"livraison\": {\"cout_Tkm\": 0.18, \"forfait_mini\": 45, \"_note\": \"Livraison granulats. cout = max(forfait_mini, tonnage x distance_carriere_km x cout_Tkm). Ajuste cout_Tkm avec ton vrai cout de transport benne/camion par tonne et par km.\"}, \"coef_fourniture\": 1.5, \"_note_coef_fourniture\": \"Coefficient applique au prix matiere HT pour couvrir la TVA non recuperee (micro, achat TTC) ET les charges sur le CA. 1.50 = x1.20 (TVA) / 0.80 (charges 20% CA). Ajuste selon ton vrai taux de charges. Mettre 1 pour vendre a prix coutant.\"}";
 async function chargerBareme() {
   if (BAREME) return BAREME;
+  // 1. cloud (proxy)
   try { const r = await fetch(PROXY + '/api/bareme/get'); if (r.ok) { BAREME = await r.json(); persistBaremeLocal(); return BAREME; } } catch(e) {}
+  // 2. modifications locales
   try { const s = localStorage.getItem('devistp_bareme'); if (s) { BAREME = JSON.parse(s); return BAREME; } } catch(e) {}
-  BAREME = await (await fetch('bareme.json')).json();
+  // 3. fichier bareme.json (si deploye)
+  try { BAREME = await (await fetch('bareme.json')).json(); return BAREME; } catch(e) {}
+  // 4. secours : barème embarque (l'appli marche toujours)
+  try { BAREME = JSON.parse(BAREME_DEFAUT); } catch(e) { BAREME = {}; }
   return BAREME;
 }
 function persistBaremeLocal() { try { localStorage.setItem('devistp_bareme', JSON.stringify(BAREME)); } catch(e) {} }
@@ -1018,6 +948,7 @@ window.addEventListener('load', function() {
       loadCloud();
       chargerHistoriquePrix();
       chargerBareme();
+      loadChantiers();
     }, 500);
   }, 1400);
 });
@@ -1210,6 +1141,43 @@ async function finaliserDevis(devis, chantier) {
   afficherEdition(devis); showTab('edit');
 }
 
+
+function afficherDevis(d) {
+  var db = d.difficulte==='Facile'?'bgg':d.difficulte==='Difficile'?'bgr':'bga';
+  var ph = (d.postes||[]).map(function(p) {
+    var haMO = p.mo_cout && Number(p.mo_cout)>0;
+    var haF = p.fourniture_cout && Number(p.fourniture_cout)>0;
+    var det = (haMO?'<span style="font-size:11px;color:var(--g4)">MO: '+Number(p.mo_cout).toFixed(0)+'\u20ac</span>':'')
+             +(haMO&&haF?'<span style="font-size:11px;color:var(--g4)"> + </span>':'')
+             +(haF?'<span style="font-size:11px;color:var(--amb)">Fourn: '+Number(p.fourniture_cout).toFixed(0)+'\u20ac</span>':'');
+    return '<div class="pr"><div style="flex:1"><div class="pn">'+p.nom+'</div><div class="pd">'+p.detail+'</div>'+(det?'<div style="margin-top:3px">'+det+'</div>':'')+'</div><div style="text-align:right;min-width:80px"><div class="pt">'+Number(p.total).toFixed(0)+' \u20ac</div></div></div>';
+  }).join('')||'';
+  var ch = (d.conseils||[]).map(function(c){ return '<div class="ci">'+c+'</div>'; }).join('');
+  var args = (d.arguments_vente||[]).map(function(a,i){
+    var icons = ['\U0001F3C6','\u26A1','\U0001F4CD'];
+    return '<div style="display:flex;gap:10px;padding:10px;background:rgba(44,95,46,.1);border-radius:8px;margin-bottom:6px">'
+      +'<span style="font-size:18px;flex-shrink:0">'+icons[i]||'\u2713'+'</span>'
+      +'<span style="font-size:13px;color:var(--w);line-height:1.4">'+a+'</span>'
+      +'</div>';
+  }).join('');
+  var valeur = d.valeur_ajoutee ? '<div style="background:linear-gradient(135deg,rgba(44,95,46,.3),rgba(61,122,64,.2));border:1px solid rgba(90,158,93,.4);border-radius:10px;padding:14px;margin-bottom:12px;text-align:center"><div style="font-size:11px;color:var(--gl);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Valeur ajoutee</div><div style="font-size:15px;font-weight:600;color:var(--w);line-height:1.4">'+d.valeur_ajoutee+'</div></div>' : '';
+  document.getElementById('rc').innerHTML = ''
+    +'<div class="dhb"><div class="dt">'+d._type+'</div><div class="dm">'+d._client+' \u2014 '+d._ville+' \u2014 '+d._date+'</div><div class="bgs"><span class="bg bgg">30 jours</span><span class="bg '+db+'">'+d.difficulte+'</span></div></div>'
+    +(d._photo?'<div style="margin-bottom:12px;border-radius:12px;overflow:hidden"><img src="'+d._photo+'" style="width:100%;max-height:180px;object-fit:cover;display:block"></div>':'')
+    +'<p style="font-size:13px;color:var(--g4);margin-bottom:12px;line-height:1.6">'+d.analyse+'</p>'
+    +'<div class="ms"><div class="mt"><div class="mv">'+d.volume_m3+'</div><div class="ml">m3</div></div><div class="mt"><div class="mv">'+d.difficulte+'</div><div class="ml">Difficulte</div></div><div class="mt"><div class="mv">'+Number(d.total_ttc).toFixed(0)+'\u20ac</div><div class="ml">TTC</div></div></div>'
+    +'<div class="card"><div class="ct">Detail postes</div>'+ph+'<div class="tx" style="margin-top:12px"><div class="tr"><span>Total HT</span><span>'+Number(d.total_ht).toFixed(2)+' \u20ac</span></div><div class="tr"><span>TVA 20%</span><span>'+Number(d.tva).toFixed(2)+' \u20ac</span></div><div class="tf"><span>Total TTC</span><span>'+Number(d.total_ttc).toFixed(2)+' \u20ac</span></div></div></div>'
+    +valeur
+    +(args?'<div class="card"><div class="ct" style="color:var(--amb)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>Arguments de vente</div>'+args+'</div>':'')
+    +(ch?'<div class="card"><div class="ct">Conseils pratiques</div>'+ch+'</div>':'')
+    +(d._photo?'<div class="rb"><div style="font-family:Barlow Condensed,sans-serif;font-size:18px;font-weight:700;color:var(--amb);margin-bottom:6px">Simulation rendu Flux IA</div><div style="font-size:13px;color:var(--g4);margin-bottom:12px">Flux IA remplace le sol sur votre photo.</div><div id="rp" style="display:none;text-align:center;padding:16px"><div class="sp" style="margin:0 auto 8px"></div><div id="rpmsg" style="font-size:13px;color:var(--g4)">Generation...</div></div><div id="rr" style="display:none;margin-bottom:12px"><div style="font-size:11px;color:var(--gl);margin-bottom:8px">Rendu genere !</div><img id="ri" style="width:100%;border-radius:10px;display:block"></div><button class="btn ba" id="btnr" onclick="genRendu()">Generer le rendu IA</button></div>':'')
+    +'<button class="btn bp" onclick="suivreChantier()">Accepter et suivre ce chantier</button>'
+    +'<button class="btn bp" onclick="exportPDF()">Telecharger PDF</button>'
+    +'<button class="btn bo" onclick="partager()">Partager</button>'
+    +'<button class="btn bo" onclick="showTab(\'achats\')">Fournitures</button>'
+    +'<button class="btn bo" onclick="showTab(\'mo\')">Main oeuvre</button>'
+    +'<button class="btn bo" onclick="showTab(\'new\')">Nouveau devis</button>';
+}
 
 async function genRendu() {
   if (!cur||!cur._photo) return;
@@ -1720,6 +1688,188 @@ function showL(m){ document.getElementById('lo').classList.add('active'); docume
 function setLS(s){ document.getElementById('ls').textContent=s; }
 function hideL(){ document.getElementById('lo').classList.remove('active'); }
 function showT(m){ var t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); setTimeout(function(){t.classList.remove('show');},2800); }
+
+/* ====== CABLAGE ONGLET PRIX ====== */
+var _prixChantier=null,_prixCodes=null,_prixParams=null;
+async function ouvrirOngletPrix(devis, chantier, postesCodes, params) {
+  _prixChantier=chantier; _prixCodes=postesCodes; _prixParams=params||{};
+  document.getElementById('n-prix').style.display='';
+  var dem = await genererDemandesPrix(devis, chantier);
+  mettreEnPause(devis, dem);
+  cur = devis; hideL();
+  renderOngletPrix(devis); showTab('prix');
+}
+function renderOngletPrix(devis) {
+  var nb=(devis.demandes_prix||[]).reduce(function(s,d){return s+d.lignes.length;},0);
+  document.getElementById('prix-banniere').innerHTML='<div style="background:rgba(245,159,10,.1);border:1px solid rgba(245,159,10,.3);border-radius:12px;padding:10px 12px;margin-bottom:12px;font-size:13px;color:#f5c98a">Devis en pause — '+nb+' prix fournisseur a confirmer</div>';
+  document.getElementById('prix-demandes').innerHTML=(devis.demandes_prix||[]).map(function(d,i){
+    var alts=(d.alternatives||[]).map(function(a){return '<div style="font-size:12px;color:#cdd3cd;margin-top:3px">&#8627; '+a.nom+' &middot; '+a.dist+' km'+(a.adresse?' — '+a.adresse:'')+'</div>';}).join('');
+    return '<div class="card"><div class="ct">'+d.fournisseur+(d.dist!=null?' <span style="color:#f59f0a">&middot; '+d.dist+' km</span>':'')+'</div>'
+      +(d.adresse?'<div style="font-size:12px;color:var(--g4)">'+d.adresse+'</div>':'')
+      +(d.tel?'<div style="font-size:12px;color:var(--g4);margin-bottom:8px">'+d.tel+'</div>':'')
+      +'<div style="font-size:12px;color:#cdd3cd;background:rgba(255,255,255,.04);border-radius:8px;padding:6px 8px;margin-bottom:8px">'+d.lignes.map(function(l){return l.quantite+' '+l.unite+' '+l.libelle;}).join('<br>')+'</div>'
+      +'<textarea id="dp-'+i+'" style="width:100%;height:120px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:9px;color:var(--w);font-family:Barlow,sans-serif;font-size:12.5px;resize:none">'+d.message+'</textarea>'
+      +'<div style="display:flex;gap:8px;margin-top:8px"><button class="pb" style="flex:1;background:var(--g)" onclick="copierDemande('+i+')">Copier</button>'
+      +(d.tel?'<a class="pb" style="flex:1;background:var(--gm);text-decoration:none;text-align:center" href="tel:'+d.tel.replace(/\s/g,'')+'">Appeler</a>':'')+'</div>'
+      +(alts?'<div style="margin-top:10px;border-top:1px solid rgba(255,255,255,.06);padding-top:8px"><div style="font-size:11px;color:var(--g4);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Autres a proximite</div>'+alts+'</div>':'')
+      +'</div>';
+  }).join('');
+  var fournitures=collecterFournituresAChiffrer(devis);
+  document.getElementById('prix-saisie').innerHTML='<div class="card" style="border-color:rgba(90,158,93,.4)"><div class="ct">Saisir les prix recus</div>'
+    +fournitures.map(function(f){return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><span style="flex:1;font-size:12.5px;color:#cdd3cd">'+f.libelle+' (EUR/'+f.unite+')</span><input type="number" id="pr-'+f.code+'" step="0.1" min="0" placeholder="?" style="width:80px;background:rgba(255,255,255,.06);border:1px solid rgba(90,158,93,.4);border-radius:8px;padding:7px;color:var(--w);font-family:Barlow,sans-serif;font-size:14px"></div>';}).join('')
+    +'<button class="btn" style="width:100%;background:var(--gl);color:var(--gd);font-weight:700;border:none;padding:11px;border-radius:9px" onclick="reprendreDevisDepuisPrix()">Reprendre le devis</button></div>';
+}
+function copierDemande(i){var el=document.getElementById('dp-'+i);if(el){navigator.clipboard.writeText(el.value);if(window.showT)showT('Copie');}}
+async function reprendreDevisDepuisPrix(){
+  var fournitures=collecterFournituresAChiffrer(cur);
+  var fourMap={}; (cur.demandes_prix||[]).forEach(function(d){ d.lignes.forEach(function(l){ fourMap[l.code]=d.fournisseur; }); });
+  fournitures.forEach(function(f){
+    var v=parseFloat(document.getElementById('pr-'+f.code).value);
+    if(!isNaN(v)&&v>0){ enregistrerPrixRecu(cur,BAREME,f.code,v); apprendrePrix(f.code,v,fourMap[f.code]||'',_prixChantier.ville); }
+  });
+  var devisFinal=reprendreDevis(cur,BAREME,_prixChantier,_prixCodes,_prixParams);
+  cur=devisFinal;
+  if(devisFinal.statut==='valide'){
+    document.getElementById('n-prix').style.display='none';
+    await finaliserDevis(cur,_prixChantier);
+  } else { renderOngletPrix(cur); }
+}
+
+/* ====== CABLAGE ONGLET BARÈME ====== */
+async function ouvrirBareme(){ await chargerBareme(); renderBareme(); showTab('bareme'); }
+function _inp(id,val,step){return '<input id="'+id+'" type="number" step="'+(step||'0.01')+'" value="'+(val!=null?val:'')+'" style="width:90px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:7px;padding:6px;color:var(--w);font-family:Barlow,sans-serif;font-size:13.5px;text-align:right">';}
+function _txt(id,val){return '<input id="'+id+'" type="text" value="'+(val||'')+'" style="flex:1;min-width:90px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:7px;padding:6px;color:var(--w);font-family:Barlow,sans-serif;font-size:13px">';}
+function _row(label,h){return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span style="flex:1;font-size:13px;color:#cdd3cd">'+label+'</span>'+h+'</div>';}
+function renderBareme(){
+  var B=BAREME,h='';
+  h+='<div class="card"><div class="ct">Fournitures (prix unitaire)</div>';
+  Object.keys(B.fournitures).forEach(function(code){var f=B.fournitures[code];var src=f._source?'<div style="font-size:11px;color:var(--g4)">appris : '+f._source+'</div>':'';
+    h+='<div style="border-bottom:1px solid rgba(255,255,255,.06);padding:8px 0"><div style="display:flex;gap:8px;align-items:center;margin-bottom:6px">'+_txt('bf-lib-'+code,f.libelle)+'</div><div style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:#cdd3cd">Prix '+_inp('bf-prix-'+code,f.prix_unitaire)+' EUR/'+(f.unite||'U')+(f.densite_Tm3!=null?' &middot; densite '+_inp('bf-dens-'+code,f.densite_Tm3,'0.01')+' T/m3':'')+'</div><label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--g4);margin-top:5px"><input type="checkbox" id="bf-conf-'+code+'"'+(f.prix_a_confirmer?' checked':'')+'> a confirmer</label>'+src+'</div>';});
+  h+='<button class="pb" style="background:var(--g);margin-top:10px;width:100%" onclick="ajouterFourniture()">+ Ajouter une fourniture</button></div>';
+  h+='<div class="card"><div class="ct">Sols (foisonnement / densite / rendement 2T5)</div>';
+  Object.keys(B.sols).forEach(function(s){var sol=B.sols[s];h+='<div style="border-bottom:1px solid rgba(255,255,255,.06);padding:8px 0"><div style="font-size:13px;font-weight:600;color:#5a9e5d;margin-bottom:6px">'+sol.libelle+'</div><div style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:#cdd3cd">foisonnt '+_inp('bs-foi-'+s,sol.foisonnement,'0.01')+' &middot; densite '+_inp('bs-den-'+s,sol.densite_Tm3,'0.01')+' &middot; rdt '+_inp('bs-rdt-'+s,sol.rendement_2t5_m3h,'0.5')+' m3/h</div></div>';});
+  h+='</div>';
+  h+='<div class="card"><div class="ct">Livraison &amp; transport</div>'+_row('Mode prix matiere','<select id="bm-mode" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:7px;padding:6px;color:var(--w);font-size:13px"><option value="depart_carriere"'+(B.mode_prix_materiaux==='depart_carriere'?' selected':'')+'>Depart carriere</option><option value="rendu_chantier"'+(B.mode_prix_materiaux==='rendu_chantier'?' selected':'')+'>Rendu chantier</option></select>')+_row('Marge fournitures (x prix HT)',_inp('bcoef',B.coef_fourniture||1,'0.01'))+_row('Livraison (EUR/T/km)',_inp('bl-tkm',B.livraison.cout_Tkm,'0.01'))+_row('Forfait mini livraison',_inp('bl-min',B.livraison.forfait_mini,'1'))+_row('Transfert engin (forfait)',_inp('bt-base',B.transfert.forfait_base,'1'))+_row('Transfert (EUR/km)',_inp('bt-km',B.transfert.cout_par_km,'0.1'))+'</div>';
+  h+='<div class="card"><div class="ct">Evacuation</div>'+_row('Capacite camion (m3)',_inp('be-cap',B.evacuation.capacite_camion_m3,'0.5'))+_row('Rotation (forfait)',_inp('be-rot',B.evacuation.cout_rotation_base,'1'))+_row('Rotation (EUR/km)',_inp('be-km',B.evacuation.cout_rotation_par_km,'0.1'));
+  Object.keys(B.evacuation.tarif_decharge_Ttonne).forEach(function(t){h+=_row('Decharge '+t+' (EUR/T)',_inp('be-dec-'+t,B.evacuation.tarif_decharge_Ttonne[t],'1'));});
+  h+=_row('Rendt pose grave (T/h)',_inp('bmo-grave',B.main_oeuvre.rendement_grave_Th,'0.5'))+'</div>';
+  h+='<button class="btn" style="width:100%;background:var(--gl);color:var(--gd);font-weight:700;border:none;padding:13px;border-radius:10px;margin-top:6px" onclick="enregistrerBareme()">Enregistrer le barème</button>';
+  document.getElementById('bareme-contenu').innerHTML=h;
+}
+function ajouterFourniture(){var code=prompt('Code interne (sans espace, ex: gnt_0_80)');if(!code)return;code=code.trim().replace(/[^a-z0-9_]/gi,'_').toLowerCase();if(BAREME.fournitures[code]){alert('Ce code existe deja');return;}BAREME.fournitures[code]={libelle:'Nouveau materiau',unite:'T',prix_unitaire:0,densite_Tm3:1.8,prix_a_confirmer:true};renderBareme();}
+function enregistrerBareme(){var B=BAREME;
+  Object.keys(B.fournitures).forEach(function(code){var f=B.fournitures[code];var lib=document.getElementById('bf-lib-'+code);if(lib)f.libelle=lib.value;var p=document.getElementById('bf-prix-'+code);if(p)f.prix_unitaire=parseFloat(p.value)||0;var dn=document.getElementById('bf-dens-'+code);if(dn)f.densite_Tm3=parseFloat(dn.value)||f.densite_Tm3;var cf=document.getElementById('bf-conf-'+code);if(cf)f.prix_a_confirmer=cf.checked;});
+  Object.keys(B.sols).forEach(function(s){B.sols[s].foisonnement=parseFloat(document.getElementById('bs-foi-'+s).value)||B.sols[s].foisonnement;B.sols[s].densite_Tm3=parseFloat(document.getElementById('bs-den-'+s).value)||B.sols[s].densite_Tm3;B.sols[s].rendement_2t5_m3h=parseFloat(document.getElementById('bs-rdt-'+s).value)||B.sols[s].rendement_2t5_m3h;});
+  B.mode_prix_materiaux=document.getElementById('bm-mode').value;B.coef_fourniture=parseFloat(document.getElementById('bcoef').value)||1;B.livraison.cout_Tkm=parseFloat(document.getElementById('bl-tkm').value)||B.livraison.cout_Tkm;B.livraison.forfait_mini=parseFloat(document.getElementById('bl-min').value)||0;B.transfert.forfait_base=parseFloat(document.getElementById('bt-base').value)||B.transfert.forfait_base;B.transfert.cout_par_km=parseFloat(document.getElementById('bt-km').value)||B.transfert.cout_par_km;B.evacuation.capacite_camion_m3=parseFloat(document.getElementById('be-cap').value)||B.evacuation.capacite_camion_m3;B.evacuation.cout_rotation_base=parseFloat(document.getElementById('be-rot').value)||B.evacuation.cout_rotation_base;B.evacuation.cout_rotation_par_km=parseFloat(document.getElementById('be-km').value)||B.evacuation.cout_rotation_par_km;
+  Object.keys(B.evacuation.tarif_decharge_Ttonne).forEach(function(t){B.evacuation.tarif_decharge_Ttonne[t]=parseFloat(document.getElementById('be-dec-'+t).value)||0;});
+  B.main_oeuvre.rendement_grave_Th=parseFloat(document.getElementById('bmo-grave').value)||B.main_oeuvre.rendement_grave_Th;
+  sauvegarderBareme();if(window.showT)showT('Barème enregistre');else alert('Barème enregistre');
+}
+
+
+/* ====== ONGLET CHANTIERS ====== */
+/* ====== SUIVI CHANTIERS (logique + interface) ====== */
+const LS_CHANTIERS = 'devistp_chantiers';
+let chantiers = [];
+let chantierCourant = null;
+
+function loadChantiers(){ try{ chantiers = JSON.parse(localStorage.getItem(LS_CHANTIERS)||'[]'); }catch(e){ chantiers=[]; } 
+  fetch(PROXY+'/api/chantiers/get').then(function(r){return r.ok?r.json():null;}).then(function(c){ if(c&&c.length){ chantiers=c; localStorage.setItem(LS_CHANTIERS, JSON.stringify(c)); } }).catch(function(){});
+  return chantiers; }
+function saveChantiers(){ try{ localStorage.setItem(LS_CHANTIERS, JSON.stringify(chantiers)); }catch(e){}
+  fetch(PROXY+'/api/chantiers/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(chantiers)}).catch(function(){}); }
+function coefBareme(){ return (typeof BAREME!=='undefined'&&BAREME&&BAREME.coef_fourniture)||1; }
+
+function accepterDevis(devis){
+  var ex=chantiers.find(function(c){return c.devis_id===devis._id;}); if(ex) return ex;
+  var coef=coefBareme(), matAchat=0, heures=0;
+  (devis.postes||[]).forEach(function(p){ if(p.fourniture_cout) matAchat+=p.fourniture_cout/coef; if(p.mo_heures) heures+=p.mo_heures; });
+  var ch={ _id:'ch_'+(devis._id||Date.now()), devis_id:devis._id, client:devis._client||'Client', type:devis._type||'Chantier', ville:devis._ville||'',
+    date_accept:new Date().toLocaleDateString('fr-FR'), statut:'en_cours', recette_ht:devis.total_ht,
+    prevu:{ materiaux_achat:Math.round(matAchat), heures:Math.round(heures*4)/4 }, depenses:[] };
+  chantiers.unshift(ch); saveChantiers(); return ch;
+}
+function syntheseChantier(ch){
+  var r={fourniture:0,carburant:0,location:0,soustraitance:0,heures_nb:0,heures_montant:0};
+  (ch.depenses||[]).forEach(function(d){ if(d.cat==='heures'){r.heures_nb+=d.heures||0;r.heures_montant+=d.montant||0;} else if(r[d.cat]!=null) r[d.cat]+=d.montant||0; });
+  var cash=r.fourniture+r.carburant+r.location+r.soustraitance;
+  var mR=ch.recette_ht-cash, mP=ch.recette_ht-ch.prevu.materiaux_achat;
+  return { reel:r, cashReel:Math.round(cash), margeReelle:Math.round(mR), margeReellePct:ch.recette_ht?Math.round(mR/ch.recette_ht*100):0,
+    margeNette:Math.round(mR-r.heures_montant), margePrevue:Math.round(mP), margePrevuePct:ch.recette_ht?Math.round(mP/ch.recette_ht*100):0,
+    ecartMateriaux:Math.round(r.fourniture-ch.prevu.materiaux_achat), ecartHeures:Math.round((r.heures_nb-ch.prevu.heures)*10)/10 };
+}
+
+/* Appele depuis le bouton du devis */
+function suivreChantier(){ if(!cur)return; var ch=accepterDevis(cur); chantierCourant=ch; document.getElementById('n-chantiers').classList.remove('hidden'); renderChantierDetail(ch); showTab('chantiers'); if(window.showT)showT('Chantier ajoute au suivi'); }
+
+function renderChantiers(){
+  chantierCourant=null;
+  var enCours=chantiers.filter(function(c){return c.statut==='en_cours';});
+  var fini=chantiers.filter(function(c){return c.statut==='termine';});
+  var h='<div style="font-family:Barlow Condensed,sans-serif;font-size:22px;font-weight:700;margin-bottom:12px">Suivi des chantiers</div>';
+  if(!chantiers.length) h+='<div class="card"><div style="font-size:13px;color:var(--g4)">Aucun chantier en suivi. Accepte un devis pour demarrer un suivi.</div></div>';
+  function carte(c){ var s=syntheseChantier(c); var col=s.margeReelle>=s.margePrevue?'#5a9e5d':(s.margeReelle>0?'#f59f0a':'#f87171');
+    return '<div class="card" onclick="ouvrirChantier(\''+c._id+'\')" style="cursor:pointer"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-weight:600">'+c.client+'</div><div style="font-size:12px;color:var(--g4)">'+c.type+' \u2014 '+c.ville+'</div></div><div style="text-align:right"><div style="font-family:Barlow Condensed,sans-serif;font-size:20px;font-weight:700;color:'+col+'">'+s.margeReelle+'\u20ac</div><div style="font-size:11px;color:var(--g4)">marge '+s.margeReellePct+'%</div></div></div></div>'; }
+  if(enCours.length){ h+='<div style="font-size:12px;color:var(--gl);text-transform:uppercase;letter-spacing:1px;margin:8px 0 6px">En cours</div>'+enCours.map(carte).join(''); }
+  if(fini.length){ h+='<div style="font-size:12px;color:var(--g4);text-transform:uppercase;letter-spacing:1px;margin:14px 0 6px">Termines</div>'+fini.map(carte).join(''); }
+  document.getElementById('chantiers-content').innerHTML=h;
+}
+function ouvrirChantier(id){ var ch=chantiers.find(function(c){return c._id===id;}); if(ch){ chantierCourant=ch; renderChantierDetail(ch); } }
+
+function renderChantierDetail(ch){
+  var s=syntheseChantier(ch);
+  function ligne(label,prevu,reel,ecart,unit){ var col=ecart>0?'#f87171':(ecart<0?'#5a9e5d':'var(--g4)'); unit=unit||'\u20ac';
+    return '<div style="display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.05)"><span style="color:#cdd3cd">'+label+'</span><span>'+(prevu!=null?'<span style="color:var(--g4)">prevu '+prevu+unit+'</span> ':'')+'<span style="color:var(--w)">reel '+reel+unit+'</span>'+(ecart!=null?' <span style="color:'+col+'">('+(ecart>0?'+':'')+ecart+unit+')</span>':'')+'</span></div>'; }
+  var col=s.margeReelle>=s.margePrevue?'#5a9e5d':(s.margeReelle>0?'#f59f0a':'#f87171');
+  var depList=(ch.depenses||[]).map(function(d,i){ var lbl={fourniture:'Fourniture',heures:'Heures',carburant:'Carburant',location:'Location',soustraitance:'Sous-traitance'}[d.cat]||d.cat;
+    return '<div style="display:flex;justify-content:space-between;align-items:center;font-size:12.5px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.05)"><div><span style="color:var(--gl)">'+lbl+'</span> <span style="color:#cdd3cd">'+(d.libelle||'')+'</span>'+(d.cat==='heures'?' <span style="color:var(--g4)">('+d.heures+'h)</span>':'')+'<div style="font-size:11px;color:var(--g4)">'+d.date+'</div></div><div style="display:flex;align-items:center;gap:8px"><span style="color:var(--w)">'+d.montant+'\u20ac</span><button onclick="supprimerDepenseUI('+i+')" style="background:none;border:none;color:#f87171;font-size:16px;cursor:pointer">\u00d7</button></div></div>'; }).join('')||'<div style="font-size:12px;color:var(--g4);padding:6px 0">Aucune depense enregistree.</div>';
+
+  var h='<button class="btn bo" onclick="renderChantiers()" style="margin-bottom:10px">\u2039 Tous les chantiers</button>'
+    +'<div class="dhb"><div class="dt">'+ch.client+'</div><div class="dm">'+ch.type+' \u2014 '+ch.ville+' \u2014 accepte le '+ch.date_accept+'</div>'
+    +'<div class="bgs"><span class="bg '+(ch.statut==='termine'?'bgg':'bga')+'">'+(ch.statut==='termine'?'Termine':'En cours')+'</span></div></div>'
+    // Synthese marge
+    +'<div class="card" style="border-color:rgba(90,158,93,.4)"><div class="ct">Marge du chantier</div>'
+    +'<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px"><span style="font-size:13px;color:#cdd3cd">Recette HT</span><input type="number" id="ch-recette" value="'+ch.recette_ht+'" onchange="majRecette(this.value)" style="width:100px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:7px;padding:6px;color:var(--w);text-align:right;font-size:14px"></div>'
+    +ligne('Depenses cash',null,s.cashReel)
+    +'<div style="display:flex;justify-content:space-between;font-family:Barlow Condensed,sans-serif;font-size:24px;font-weight:700;padding-top:8px;margin-top:4px;border-top:1px solid rgba(255,255,255,.15)"><span>Marge</span><span style="color:'+col+'">'+s.margeReelle+'\u20ac <span style="font-size:14px">('+s.margeReellePct+'%)</span></span></div>'
+    +'<div style="font-size:12px;color:var(--g4);margin-top:6px">Marge prevue : '+s.margePrevue+'\u20ac ('+s.margePrevuePct+'%) \u00b7 Marge nette si tu valorises tes heures : '+s.margeNette+'\u20ac</div></div>'
+    // Comparaison
+    +'<div class="card"><div class="ct">Prevu vs reel</div>'
+    +ligne('Materiaux (achat)',ch.prevu.materiaux_achat,s.reel.fourniture,s.ecartMateriaux)
+    +ligne('Heures',ch.prevu.heures,s.reel.heures_nb,s.ecartHeures,'h')
+    +ligne('Carburant',null,s.reel.carburant)
+    +ligne('Location',null,s.reel.location)
+    +ligne('Sous-traitance',null,s.reel.soustraitance)
+    +'</div>'
+    // Ajout depense
+    +'<div class="card"><div class="ct">Ajouter une depense</div>'
+    +'<select id="dep-cat" onchange="majChampHeures()" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:7px;padding:8px;color:var(--w);font-size:13px;margin-bottom:8px"><option value="fourniture">Fourniture</option><option value="heures">Heures</option><option value="carburant">Carburant</option><option value="location">Location</option><option value="soustraitance">Sous-traitance</option></select>'
+    +'<input type="text" id="dep-lib" placeholder="Libelle (ex: facture Vicat)" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:7px;padding:8px;color:var(--w);font-size:13px;margin-bottom:8px;box-sizing:border-box">'
+    +'<div id="dep-heures-wrap" style="display:none;margin-bottom:8px"><input type="number" id="dep-heures" placeholder="Nombre d\'heures" oninput="majMontantHeures()" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:7px;padding:8px;color:var(--w);font-size:13px;box-sizing:border-box"></div>'
+    +'<input type="number" id="dep-montant" placeholder="Montant EUR" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:7px;padding:8px;color:var(--w);font-size:13px;margin-bottom:8px;box-sizing:border-box">'
+    +'<button class="btn bp" onclick="ajouterDepenseUI()">Ajouter</button></div>'
+    // Liste depenses
+    +'<div class="card"><div class="ct">Depenses ('+(ch.depenses||[]).length+')</div>'+depList+'</div>'
+    +(ch.statut==='en_cours'?'<button class="btn bo" onclick="terminerChantierUI()">Marquer comme termine</button>':'');
+  document.getElementById('chantiers-content').innerHTML=h;
+}
+function majRecette(v){ if(chantierCourant){ chantierCourant.recette_ht=parseFloat(v)||0; saveChantiers(); renderChantierDetail(chantierCourant); } }
+function majChampHeures(){ var c=document.getElementById('dep-cat').value; document.getElementById('dep-heures-wrap').style.display=(c==='heures')?'block':'none'; }
+function majMontantHeures(){ var h=parseFloat(document.getElementById('dep-heures').value)||0; var t=parseFloat(cfg.tarif)||75; document.getElementById('dep-montant').value=Math.round(h*t); }
+function ajouterDepenseUI(){
+  if(!chantierCourant)return;
+  var cat=document.getElementById('dep-cat').value;
+  var dep={ cat:cat, libelle:document.getElementById('dep-lib').value, montant:parseFloat(document.getElementById('dep-montant').value)||0, date:new Date().toLocaleDateString('fr-FR') };
+  if(cat==='heures') dep.heures=parseFloat(document.getElementById('dep-heures').value)||0;
+  if(!dep.montant && !dep.heures){ if(window.showT)showT('Montant requis'); return; }
+  chantierCourant.depenses.unshift(dep); saveChantiers(); renderChantierDetail(chantierCourant);
+}
+function supprimerDepenseUI(i){ if(chantierCourant){ chantierCourant.depenses.splice(i,1); saveChantiers(); renderChantierDetail(chantierCourant); } }
+function terminerChantierUI(){ if(chantierCourant){ chantierCourant.statut='termine'; chantierCourant.date_fin=new Date().toLocaleDateString('fr-FR'); saveChantiers(); renderChantierDetail(chantierCourant); if(window.showT)showT('Chantier termine'); } }
+
+function ouvrirChantiersListe(){ renderChantiers(); showTab('chantiers'); }
+
+
 </script>
 </body>
 </html>
