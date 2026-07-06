@@ -132,7 +132,7 @@ header h1 span{color:var(--gl)}
       <div class="card">
         <div class="ct">Chantier</div>
         <div class="fg2"><label>Type de travaux</label>
-          <select id="tt">
+          <select id="tt" onchange="majChampsType()">
             <option value="Acces garage / entree">Acces garage / entree</option>
             <option value="Terrassement general">Terrassement general</option>
             <option value="Creation de mare">Creation de mare</option>
@@ -141,11 +141,19 @@ header h1 span{color:var(--gl)}
             <option value="Tranchee reseaux">Tranchee reseaux</option>
             <option value="Assainissement">Assainissement</option>
             <option value="Plateforme / parking">Plateforme / parking</option>
+            <option value="Mur de soutenement gabion">Mur de soutenement gabion</option>
+            <option value="Enrochement">Enrochement</option>
+            <option value="Paroi berlinoise">Paroi berlinoise</option>
           </select>
         </div>
         <div class="fg">
-          <div class="fg2"><label>Surface (m2)</label><input type="number" id="su" inputmode="numeric" placeholder="ex: 90" oninput="uc()"></div>
-          <div class="fg2"><label>Profondeur (m)</label><input type="number" id="pr2" inputmode="decimal" placeholder="ex: 0.30" step="0.05" oninput="uc()"></div>
+          <div class="fg2"><label id="lbl-su">Surface (m2)</label><input type="number" id="su" inputmode="numeric" placeholder="ex: 90" oninput="uc()"></div>
+          <div class="fg2"><label id="lbl-pr2">Profondeur (m)</label><input type="number" id="pr2" inputmode="decimal" placeholder="ex: 0.30" step="0.05" oninput="uc()"></div>
+          <div class="fg2" id="fg-epgab" style="display:none"><label>Epaisseur mur (m)</label><input type="number" id="ep-gabion" inputmode="decimal" placeholder="ex: 0.5" step="0.1" value="0.5"></div>
+          <div class="fg2" id="fg-fouille" style="display:none"><label>Fouille : largeur (m)</label><input type="number" id="fo-larg" inputmode="decimal" placeholder="0 = pas de fouille" step="0.1"></div>
+          <div class="fg2" id="fg-fouille2" style="display:none"><label>Fouille : profondeur (m)</label><input type="number" id="fo-prof" inputmode="decimal" placeholder="ex: 0.8" step="0.1"></div>
+          <div class="fg2" id="fg-reseau" style="display:none"><label>Type de reseau</label><select id="rt"><option value="electricite">Electricite (TPC rouge)</option><option value="eau">Eau potable (PEHD)</option><option value="telecom">Telecom (fourreau vert)</option></select></div>
+          <div class="fg2" id="fg-trlarg" style="display:none"><label>Largeur tranchee (m)</label><input type="number" id="tr-larg" inputmode="decimal" step="0.1" value="0.4"></div>
           <div class="fg2"><label>Type de sol</label>
             <select id="ts">
               <option value="vegetale">Terre vegetale</option>
@@ -293,6 +301,7 @@ header h1 span{color:var(--gl)}
         <div class="ct">Donnees</div>
         <p style="font-size:13px;color:var(--g4);margin-bottom:12px">Supprimer tous les devis.</p>
         <button class="btn bd bsm" onclick="clearAll()">Tout supprimer</button>
+        <p style="font-size:11px;color:var(--g4);margin-top:14px;text-align:center">DevisTP — version <span id="app-version"></span></p>
       </div>
     </div>
   </div>
@@ -320,6 +329,7 @@ header h1 span{color:var(--gl)}
   </div>
 </div>
 <script>
+const APP_VERSION = '3.0';
 const PROXY = 'https://devistp-proxy.onrender.com';
 const BASE_LAT = 45.3833, BASE_LNG = 6.1167;
 let photo = null, cur = null, hist = [], cfg = JSON.parse(localStorage.getItem('cfg') || '{}');
@@ -573,6 +583,224 @@ function posteCompactage(B, c) {
 /* =====================================================================
    ASSEMBLEUR
    ===================================================================== */
+/* --- GABION : cages (a l'unite) --- */
+function dimsGabion(B, c) {
+  var ml = c.surf || 0;
+  var hauteur = c.prof || (B.gabion && B.gabion.hauteur_defaut) || 1;
+  var epaisseur = c.epaisseur_gabion || (B.gabion && B.gabion.epaisseur_defaut) || 0.5;
+  return { ml:ml, hauteur:hauteur, epaisseur:epaisseur, volume: round2(ml*hauteur*epaisseur) };
+}
+function posteGabionCages(B, c) {
+  var coef = B.coef_fourniture || 1;
+  var g = dimsGabion(B, c);
+  var cage = B.fournitures.cage_gabion;
+  var volCage = cage.volume_m3 || 1;
+  var nb = Math.ceil(g.volume / volCage);
+  var coutF = euro(nb * cage.prix_unitaire * coef);
+  var cTxt = coef !== 1 ? ' x' + coef : '';
+  return { nom:"Cages gabion", detail:g.ml+" ml x "+g.hauteur+"m x "+g.epaisseur+"m = "+g.volume+" m3 -> "+nb+" cage(s)",
+    mo_heures:0, mo_cout:0,
+    fourniture_detail:nb+" cage(s) x "+cage.prix_unitaire+"EUR"+cTxt+" = "+coutF+"EUR", fourniture_cout:coutF,
+    total:coutF, prix_provisoire:!!cage.prix_a_confirmer, fourniture_code:"cage_gabion", quantite:nb, unite:"U" };
+}
+/* --- GABION : pierre de remplissage (a la tonne) --- */
+function posteGabionPierre(B, c) {
+  var coef = B.coef_fourniture || 1;
+  var g = dimsGabion(B, c);
+  var pierre = B.fournitures.pierre_gabion;
+  var tonnage = round2(g.volume * pierre.densite_Tm3);
+  var coutF = euro(tonnage * pierre.prix_unitaire * coef);
+  var livr = euro(coutLivraison(B, tonnage, c.dist_carriere) * coef);
+  var cTxt = coef !== 1 ? ' x' + coef : '';
+  return { nom:"Pierre de remplissage gabion", detail:g.volume+" m3 -> "+tonnage+" T",
+    mo_heures:0, mo_cout:0,
+    fourniture_detail:tonnage+" T x "+pierre.prix_unitaire+"EUR/T"+cTxt+(livr>0?" + livraison "+livr+"EUR":"")+" = "+(coutF+livr)+"EUR",
+    fourniture_cout:coutF+livr, livraison_cout:livr,
+    total:coutF+livr, prix_provisoire:!!pierre.prix_a_confirmer, fourniture_code:"pierre_gabion", quantite:tonnage, unite:"T" };
+}
+/* --- GABION : montage + remplissage (main d'oeuvre) --- */
+function posteGabionMontage(B, c) {
+  var g = dimsGabion(B, c);
+  var rdt = (B.main_oeuvre && B.main_oeuvre.rendement_gabion_m3h) || 0.6;
+  var heures = ceilQuart(g.volume / rdt);
+  var cout = euro(heures * c.tarif);
+  return { nom:"Montage + remplissage gabion", detail:g.volume+" m3 / "+rdt+" m3/h",
+    mo_heures:heures, mo_cout:cout, fourniture_detail:"", fourniture_cout:0, total:cout };
+}
+/* --- GABION : assise de fondation (lit de grave compacte sous le mur) --- */
+function posteGabionAssise(B, c) {
+  var coef = B.coef_fourniture || 1;
+  var g = dimsGabion(B, c);
+  var ep = (B.gabion && B.gabion.assise_ep) || 0.1;
+  var largeur = g.epaisseur + 0.2;            // assise un peu plus large que le mur
+  var f = B.fournitures.grave_0_20;
+  var volume = round2(g.ml * largeur * ep);
+  var tonnage = round2(volume * f.densite_Tm3);
+  var coutF = euro(tonnage * f.prix_unitaire * coef);
+  var livr = euro(coutLivraison(B, tonnage, c.dist_carriere) * coef);
+  var heures = ceilQuart(tonnage / B.main_oeuvre.rendement_grave_Th);
+  var coutMO = euro(heures * c.tarif);
+  var cTxt = coef !== 1 ? ' x' + coef : '';
+  return { nom:"Assise de fondation (grave)", detail:g.ml+" ml x "+round2(largeur)+"m x "+ep+"m = "+volume+" m3 -> "+tonnage+" T",
+    mo_heures:heures, mo_cout:coutMO,
+    fourniture_detail:tonnage+" T x "+f.prix_unitaire+"EUR/T"+cTxt+(livr>0?" + livraison "+livr+"EUR":"")+" = "+(coutF+livr)+"EUR",
+    fourniture_cout:coutF+livr, livraison_cout:livr,
+    total:coutF+livr+coutMO, prix_provisoire:!!f.prix_a_confirmer, fourniture_code:"grave_0_20", quantite:tonnage, unite:"T" };
+}
+/* --- GABION : geotextile en parement arriere --- */
+function posteGabionGeotextile(B, c) {
+  var coef = B.coef_fourniture || 1;
+  var g = dimsGabion(B, c);
+  var f = B.fournitures.geotextile_140;
+  var surface = round2(g.ml * g.hauteur * 1.1);   // face arriere + recouvrements
+  var coutF = euro(surface * f.prix_unitaire * coef);
+  var cTxt = coef !== 1 ? ' x' + coef : '';
+  return { nom:"Geotextile parement arriere", detail:g.ml+" ml x "+g.hauteur+"m = "+surface+" m2",
+    mo_heures:0, mo_cout:0,
+    fourniture_detail:surface+" m2 x "+f.prix_unitaire+"EUR/m2"+cTxt+" = "+coutF+"EUR", fourniture_cout:coutF,
+    total:coutF, prix_provisoire:!!f.prix_a_confirmer, fourniture_code:"geotextile_140", quantite:surface, unite:"m2",
+    fiche_tech:{ norme:f.norme, designation:f.libelle } };
+}
+
+/* --- ENROCHEMENT : blocs (a la tonne, surface de face x epaisseur) --- */
+function posteEnrochBlocs(B, c) {
+  var coef = B.coef_fourniture || 1;
+  var g = dimsGabion(B, c);                       // ml x hauteur x epaisseur
+  var f = B.fournitures.bloc_enrochement;
+  var tonnage = round2(g.volume * f.densite_Tm3);
+  var coutF = euro(tonnage * f.prix_unitaire * coef);
+  var livr = euro(coutLivraison(B, tonnage, c.dist_carriere) * coef);
+  var cTxt = coef !== 1 ? ' x' + coef : '';
+  return { nom:"Blocs d'enrochement", detail:g.ml+" ml x "+g.hauteur+"m x "+g.epaisseur+"m = "+g.volume+" m3 -> "+tonnage+" T",
+    mo_heures:0, mo_cout:0,
+    fourniture_detail:tonnage+" T x "+f.prix_unitaire+"EUR/T"+cTxt+(livr>0?" + livraison "+livr+"EUR":"")+" = "+(coutF+livr)+"EUR",
+    fourniture_cout:coutF+livr, livraison_cout:livr,
+    total:coutF+livr, prix_provisoire:!!f.prix_a_confirmer, fourniture_code:"bloc_enrochement", quantite:tonnage, unite:"T" };
+}
+/* --- ENROCHEMENT : pose des blocs a la pelle (MO) --- */
+function posteEnrochPose(B, c) {
+  var g = dimsGabion(B, c);
+  var rdt = (B.main_oeuvre && B.main_oeuvre.rendement_enroch_m3h) || 5;
+  var heures = ceilQuart(g.volume / rdt);
+  var cout = euro(heures * c.tarif);
+  return { nom:"Pose d'enrochement a la pelle", detail:g.volume+" m3 / "+rdt+" m3/h",
+    mo_heures:heures, mo_cout:cout, fourniture_detail:"", fourniture_cout:0, total:cout };
+}
+/* --- PAROI BERLINOISE : fourniture au m2 (profiles + blindage) --- */
+function posteBerlinoiseParoi(B, c) {
+  var coef = B.coef_fourniture || 1;
+  var ml = c.surf || 0, hauteur = c.prof || 1;
+  var surface = round2(ml * hauteur);
+  var f = B.fournitures.paroi_berlinoise;
+  var coutF = euro(surface * f.prix_unitaire * coef);
+  var cTxt = coef !== 1 ? ' x' + coef : '';
+  return { nom:"Paroi berlinoise (fourniture)", detail:ml+" ml x "+hauteur+"m = "+surface+" m2",
+    mo_heures:0, mo_cout:0,
+    fourniture_detail:surface+" m2 x "+f.prix_unitaire+"EUR/m2"+cTxt+" = "+coutF+"EUR", fourniture_cout:coutF,
+    total:coutF, prix_provisoire:!!f.prix_a_confirmer, fourniture_code:"paroi_berlinoise", quantite:surface, unite:"m2" };
+}
+/* --- PAROI BERLINOISE : pose (MO au m2) --- */
+function posteBerlinoisePose(B, c) {
+  var ml = c.surf || 0, hauteur = c.prof || 1;
+  var surface = round2(ml * hauteur);
+  var rdt = (B.main_oeuvre && B.main_oeuvre.rendement_berlinoise_m2h) || 1.5;
+  var heures = ceilQuart(surface / rdt);
+  var cout = euro(heures * c.tarif);
+  return { nom:"Pose paroi berlinoise", detail:surface+" m2 / "+rdt+" m2/h",
+    mo_heures:heures, mo_cout:cout, fourniture_detail:"", fourniture_cout:0, total:cout };
+}
+
+/* --- FOUILLE (soutenement) : volumes selon longueur x largeur x prof de fouille --- */
+function volumesFouille(B, c) {
+  var sol = B.sols[c.sol] || B.sols.mixte;
+  var volEnPlace = round2((c.surf||0) * (c.largeur_fouille||0) * (c.prof_fouille||0));
+  return { volEnPlace:volEnPlace, volFoisonne:round2(volEnPlace*sol.foisonnement),
+           tonnage:round2(volEnPlace*sol.densite_Tm3), sol:sol };
+}
+function posteFouille(B, c, v) {
+  var rendement = v.sol.rendement_2t5_m3h * B.acces[c.acces].coef_rendement;
+  var heures = ceilQuart(v.volEnPlace / rendement);
+  var cout = euro(heures * c.tarif);
+  return { nom:"Fouille / terrassement du mur", detail:c.surf+" ml x "+c.largeur_fouille+"m x "+c.prof_fouille+"m = "+v.volEnPlace+" m3 / "+round2(rendement)+" m3/h",
+    mo_heures:heures, mo_cout:cout, fourniture_detail:"", fourniture_cout:0, total:cout };
+}
+
+/* --- RESEAUX : lit de pose sable (ml x largeur x 10cm) --- */
+function posteLitSable(B, c) {
+  var coef = B.coef_fourniture || 1;
+  var ml = c.ml || c.surf || 0, larg = c.largeur_tranchee || 0.4, ep = 0.1;
+  var f = B.fournitures.sable_0_4;
+  var volume = round2(ml * larg * ep);
+  var tonnage = round2(volume * f.densite_Tm3);
+  var coutF = euro(tonnage * f.prix_unitaire * coef);
+  var livr = euro(coutLivraison(B, tonnage, c.dist_carriere) * coef);
+  var heures = ceilQuart(tonnage / B.main_oeuvre.rendement_grave_Th);
+  var coutMO = euro(heures * c.tarif);
+  var cTxt = coef !== 1 ? ' x' + coef : '';
+  return { nom:"Lit de pose sable", detail:ml+" ml x "+larg+"m x "+ep+"m = "+volume+" m3 -> "+tonnage+" T",
+    mo_heures:heures, mo_cout:coutMO,
+    fourniture_detail:tonnage+" T x "+f.prix_unitaire+"EUR/T"+cTxt+(livr>0?" + livraison "+livr+"EUR":"")+" = "+(coutF+livr)+"EUR",
+    fourniture_cout:coutF+livr, livraison_cout:livr,
+    total:coutF+livr+coutMO, prix_provisoire:!!f.prix_a_confirmer, fourniture_code:"sable_0_4", quantite:tonnage, unite:"T" };
+}
+/* --- RESEAUX : conduite selon le type de reseau --- */
+function posteConduit(B, c) {
+  var coef = B.coef_fourniture || 1;
+  var r = (B.reseaux && B.reseaux[c.reseau]) || null;
+  var code = r ? r.fourniture : 'gaine_tpc_63';
+  var f = B.fournitures[code];
+  var ml = c.ml || c.surf || 0;
+  var coutF = euro(ml * f.prix_unitaire * coef);
+  var rdt = (B.main_oeuvre && B.main_oeuvre.rendement_conduit_mlh) || 35;
+  var heures = ceilQuart(ml / rdt);
+  var coutMO = euro(heures * c.tarif);
+  var cTxt = coef !== 1 ? ' x' + coef : '';
+  return { nom:"Fourniture + pose "+f.libelle, detail:ml+" ml / "+rdt+" ml/h",
+    mo_heures:heures, mo_cout:coutMO,
+    fourniture_detail:ml+" ml x "+f.prix_unitaire+"EUR/ml"+cTxt+" = "+coutF+"EUR", fourniture_cout:coutF,
+    total:coutF+coutMO, prix_provisoire:!!f.prix_a_confirmer, fourniture_code:code, quantite:ml, unite:"ml" };
+}
+/* --- RESEAUX : grillage avertisseur (pose au remblai, fourniture seule) --- */
+function posteGrillage(B, c) {
+  var coef = B.coef_fourniture || 1;
+  var f = B.fournitures.grillage_avertisseur;
+  var ml = c.ml || c.surf || 0;
+  var coutF = euro(ml * f.prix_unitaire * coef);
+  var cTxt = coef !== 1 ? ' x' + coef : '';
+  return { nom:"Grillage avertisseur", detail:ml+" ml (pose au remblai)",
+    mo_heures:0, mo_cout:0,
+    fourniture_detail:ml+" ml x "+f.prix_unitaire+"EUR/ml"+cTxt+" = "+coutF+"EUR", fourniture_cout:coutF,
+    total:coutF, prix_provisoire:!!f.prix_a_confirmer, fourniture_code:"grillage_avertisseur", quantite:ml, unite:"ml" };
+}
+/* --- RESEAUX : remblai + compactage avec les terres du site (MO seule) --- */
+function posteRemblaiTranchee(B, c) {
+  var ml = c.ml || c.surf || 0, larg = c.largeur_tranchee || 0.4;
+  var volume = round2(ml * larg * (c.prof || 0) * 0.85);   // - lit de pose et conduite
+  var rdt = (B.main_oeuvre && B.main_oeuvre.rendement_remblai_m3h) || 10;
+  var heures = ceilQuart(volume / rdt);
+  var cout = euro(heures * c.tarif);
+  return { nom:"Remblai + compactage (terres du site)", detail:volume+" m3 / "+rdt+" m3/h (par couches)",
+    mo_heures:heures, mo_cout:cout, fourniture_detail:"", fourniture_cout:0, total:cout };
+}
+/* --- DRAINAGE : enrobage gravier autour du drain --- */
+function posteEnrobageGravier(B, c) {
+  var coef = B.coef_fourniture || 1;
+  var ml = c.ml || c.surf || 0, larg = c.largeur_tranchee || 0.4;
+  var f = B.fournitures.grave_0_20;
+  var volume = round2(ml * larg * 0.3);   // ~30 cm d'enrobage
+  var tonnage = round2(volume * f.densite_Tm3);
+  var coutF = euro(tonnage * f.prix_unitaire * coef);
+  var livr = euro(coutLivraison(B, tonnage, c.dist_carriere) * coef);
+  var heures = ceilQuart(tonnage / B.main_oeuvre.rendement_grave_Th);
+  var coutMO = euro(heures * c.tarif);
+  var cTxt = coef !== 1 ? ' x' + coef : '';
+  return { nom:"Enrobage gravier du drain", detail:ml+" ml x "+larg+"m x 0.3m = "+volume+" m3 -> "+tonnage+" T",
+    mo_heures:heures, mo_cout:coutMO,
+    fourniture_detail:tonnage+" T x "+f.prix_unitaire+"EUR/T"+cTxt+(livr>0?" + livraison "+livr+"EUR":"")+" = "+(coutF+livr)+"EUR",
+    fourniture_cout:coutF+livr, livraison_cout:livr,
+    total:coutF+livr+coutMO, prix_provisoire:!!f.prix_a_confirmer, fourniture_code:"grave_0_20", quantite:tonnage, unite:"T" };
+}
+
 function genererDevisDeterministe(B, c, postesVoulus, params = {}) {
   Object.assign(c, params);
   if (!B.sols[c.sol]) c.sol = B.sols.mixte ? 'mixte' : Object.keys(B.sols)[0];
@@ -595,6 +823,23 @@ function genererDevisDeterministe(B, c, postesVoulus, params = {}) {
       case "grave":       postes.push(posteGranulat(B, c, "grave_0_20",         params.ep_grave || 0.15)); break;
       case "tout_venant": postes.push(posteGranulat(B, c, "tout_venant_0_31_5", params.ep_tv    || 0.20)); break;
       case "sable":       postes.push(posteGranulat(B, c, "sable_0_4",          params.ep_sable || 0.10)); break;
+      case "gabion_cages":   postes.push(posteGabionCages(B, c)); break;
+      case "gabion_pierre":  postes.push(posteGabionPierre(B, c)); break;
+      case "gabion_montage": postes.push(posteGabionMontage(B, c)); break;
+      case "gabion_assise":  postes.push(posteGabionAssise(B, c)); break;
+      case "gabion_geotextile": postes.push(posteGabionGeotextile(B, c)); break;
+      case "enroch_blocs":      postes.push(posteEnrochBlocs(B, c)); break;
+      case "enroch_pose":       postes.push(posteEnrochPose(B, c)); break;
+      case "berlinoise_paroi":  postes.push(posteBerlinoiseParoi(B, c)); break;
+      case "berlinoise_pose":   postes.push(posteBerlinoisePose(B, c)); break;
+      case "fouille":           postes.push(posteFouille(B, c, volumesFouille(B, c))); break;
+      case "fouille_evac":      postes.push(posteEvacuation(B, c, volumesFouille(B, c))); break;
+      case "fouille_regalage":  postes.push(posteRegalage(B, c, volumesFouille(B, c))); break;
+      case "lit_sable":         postes.push(posteLitSable(B, c)); break;
+      case "conduit":           postes.push(posteConduit(B, c)); break;
+      case "grillage":          postes.push(posteGrillage(B, c)); break;
+      case "remblai_tranchee":  postes.push(posteRemblaiTranchee(B, c)); break;
+      case "enrobage_gravier":  postes.push(posteEnrobageGravier(B, c)); break;
     }
   });
 
@@ -922,7 +1167,7 @@ function apprendrePrix(code, prix, fournisseur, ville) {
 
 /* --- CHARGEMENT BARÈME EDITABLE --- */
 let BAREME = null;
-const BAREME_DEFAUT = "{\"_version\": \"1.0\", \"_note\": \"BASE DE PRIX DevisTP — Remplis chaque valeur avec TES vrais chiffres Isere. Les valeurs ci-dessous sont des ORDRES DE GRANDEUR a verifier/ajuster. Tout le calcul s'appuie la-dessus : si une valeur est juste, le devis est juste.\", \"sols\": {\"vegetale\": {\"libelle\": \"Terre vegetale\", \"foisonnement\": 1.25, \"densite_Tm3\": 1.5, \"rendement_2t5_m3h\": 9}, \"argile\": {\"libelle\": \"Argile / limon\", \"foisonnement\": 1.3, \"densite_Tm3\": 1.8, \"rendement_2t5_m3h\": 6}, \"mixte\": {\"libelle\": \"Mixte / gravats\", \"foisonnement\": 1.35, \"densite_Tm3\": 1.7, \"rendement_2t5_m3h\": 6}, \"grave\": {\"libelle\": \"Grave / sable\", \"foisonnement\": 1.15, \"densite_Tm3\": 1.9, \"rendement_2t5_m3h\": 8}, \"rocheux\": {\"libelle\": \"Rocheux / dur\", \"foisonnement\": 1.5, \"densite_Tm3\": 2.2, \"rendement_2t5_m3h\": 3}}, \"_note_sols\": \"foisonnement = coef d'augmentation du volume une fois excave (pilote l'evacuation). densite_Tm3 = tonnes par m3 en place (pilote tonnage decharge). rendement = m3/h excaves par la 2T5 EN ACCES FACILE (le coef d'acces s'applique ensuite).\", \"acces\": {\"facile\": {\"libelle\": \"Facile (+3m)\", \"coef_rendement\": 1.0}, \"moyen\": {\"libelle\": \"Moyen (2-3m)\", \"coef_rendement\": 0.75}, \"difficile\": {\"libelle\": \"Difficile (-2m)\", \"coef_rendement\": 0.5}}, \"_note_acces\": \"coef_rendement multiplie le rendement de l'engin. Acces difficile = 2x plus lent = 2x plus cher en MO.\", \"evacuation\": {\"capacite_camion_m3\": 8, \"cout_rotation_base\": 60, \"cout_rotation_par_km\": 1.8, \"tarif_decharge_Ttonne\": {\"inerte\": 18, \"terre\": 12, \"melange\": 25, \"pollue\": 90}}, \"_note_evacuation\": \"rotations = ceil(volume_foisonne / capacite_camion). cout transport = rotations x (cout_rotation_base + dist_km x cout_rotation_par_km). cout decharge = tonnage x tarif_decharge selon nature. Mets a jour avec les tarifs reels de TES decharges/ISDI.\", \"transfert\": {\"forfait_base\": 75, \"cout_par_km\": 3.0}, \"_note_transfert\": \"Amenee/repli engin. cout = forfait_base + dist_km x cout_par_km (aller-retour deja integre dans le coef).\", \"fournitures\": {\"tout_venant_0_31_5\": {\"libelle\": \"Tout-venant 0/31.5\", \"unite\": \"T\", \"prix_unitaire\": 16, \"densite_Tm3\": 1.9, \"norme\": \"NF EN 13242\", \"prix_a_confirmer\": true}, \"grave_0_20\": {\"libelle\": \"Grave 0/20\", \"unite\": \"T\", \"prix_unitaire\": 19, \"densite_Tm3\": 1.9, \"norme\": \"NF EN 13242\", \"prix_a_confirmer\": true}, \"sable_0_4\": {\"libelle\": \"Sable 0/4\", \"unite\": \"T\", \"prix_unitaire\": 22, \"densite_Tm3\": 1.6, \"norme\": \"NF EN 13139\", \"prix_a_confirmer\": true}, \"geotextile_140\": {\"libelle\": \"Geotextile 140g/m2\", \"unite\": \"m2\", \"prix_unitaire\": 2.5, \"norme\": \"NF EN ISO 10319\"}, \"bordurette_T1\": {\"libelle\": \"Bordurette beton T1\", \"unite\": \"ml\", \"prix_unitaire\": 14, \"norme\": \"NF EN 1340\"}, \"drain_100\": {\"libelle\": \"Drain agricole D100\", \"unite\": \"ml\", \"prix_unitaire\": 3.5}}, \"_note_fournitures\": \"prix_unitaire = prix RENDU CHANTIER (transport carriere inclus). Pour les materiaux en T, densite_Tm3 sert a convertir un volume (m3) en tonnage a commander.\", \"postes_par_type\": {\"Acces garage / entree\": [\"transfert\", \"decaissage\", \"geotextile\", \"grave\", \"compactage\"], \"Terrassement general\": [\"transfert\", \"decaissage\", \"evacuation\", \"regalage\"], \"Creation de mare\": [\"transfert\", \"decaissage\", \"evacuation\", \"geotextile\"], \"Drainage / VRD\": [\"transfert\", \"tranchee\", \"drain\", \"grave\", \"remblai\"], \"Nivellement terrain\": [\"transfert\", \"decapage\", \"regalage\", \"compactage\"], \"Tranchee reseaux\": [\"transfert\", \"tranchee\", \"sable\", \"remblai\"], \"Assainissement\": [\"transfert\", \"tranchee\", \"evacuation\", \"sable\", \"remblai\"], \"Plateforme / parking\": [\"transfert\", \"decaissage\", \"evacuation\", \"geotextile\", \"tout_venant\", \"compactage\"]}, \"_note_postes\": \"Pour chaque type de chantier, liste des postes a generer par defaut. C'est ce que l'IA peut ajuster selon la description/photo, mais le calcul de chaque poste reste deterministe.\", \"main_oeuvre\": {\"rendement_grave_Th\": 10, \"_note\": \"rendement_grave_Th = tonnes de grave mises en oeuvre + compactees par heure. Sert a chiffrer la MO de mise en oeuvre des fournitures.\"}, \"_note_prix_a_confirmer\": \"prix_a_confirmer:true -> le poste est marque provisoire, le devis passe en attente, une demande de prix fournisseur est generee. Passe a false (ou enregistrePrixRecu) une fois le prix confirme.\", \"mode_prix_materiaux\": \"depart_carriere\", \"_note_mode_prix\": \"'depart_carriere' = prix matiere SANS transport + ligne livraison calculee a part (recommande : prix matiere reutilisable partout). 'rendu_chantier' = transport inclus dans le prix unitaire (simple mais valable seulement a distance equivalente).\", \"livraison\": {\"cout_Tkm\": 0.18, \"forfait_mini\": 45, \"_note\": \"Livraison granulats. cout = max(forfait_mini, tonnage x distance_carriere_km x cout_Tkm). Ajuste cout_Tkm avec ton vrai cout de transport benne/camion par tonne et par km.\"}, \"coef_fourniture\": 1.5, \"_note_coef_fourniture\": \"Coefficient applique au prix matiere HT pour couvrir la TVA non recuperee (micro, achat TTC) ET les charges sur le CA. 1.50 = x1.20 (TVA) / 0.80 (charges 20% CA). Ajuste selon ton vrai taux de charges. Mettre 1 pour vendre a prix coutant.\"}";
+const BAREME_DEFAUT = "{\"_version\": \"1.0\", \"_note\": \"BASE DE PRIX DevisTP — Remplis chaque valeur avec TES vrais chiffres Isere. Les valeurs ci-dessous sont des ORDRES DE GRANDEUR a verifier/ajuster. Tout le calcul s'appuie la-dessus : si une valeur est juste, le devis est juste.\", \"sols\": {\"vegetale\": {\"libelle\": \"Terre vegetale\", \"foisonnement\": 1.25, \"densite_Tm3\": 1.5, \"rendement_2t5_m3h\": 9}, \"argile\": {\"libelle\": \"Argile / limon\", \"foisonnement\": 1.3, \"densite_Tm3\": 1.8, \"rendement_2t5_m3h\": 6}, \"mixte\": {\"libelle\": \"Mixte / gravats\", \"foisonnement\": 1.35, \"densite_Tm3\": 1.7, \"rendement_2t5_m3h\": 6}, \"grave\": {\"libelle\": \"Grave / sable\", \"foisonnement\": 1.15, \"densite_Tm3\": 1.9, \"rendement_2t5_m3h\": 8}, \"rocheux\": {\"libelle\": \"Rocheux / dur\", \"foisonnement\": 1.5, \"densite_Tm3\": 2.2, \"rendement_2t5_m3h\": 3}}, \"_note_sols\": \"foisonnement = coef d'augmentation du volume une fois excave (pilote l'evacuation). densite_Tm3 = tonnes par m3 en place (pilote tonnage decharge). rendement = m3/h excaves par la 2T5 EN ACCES FACILE (le coef d'acces s'applique ensuite).\", \"acces\": {\"facile\": {\"libelle\": \"Facile (+3m)\", \"coef_rendement\": 1.0}, \"moyen\": {\"libelle\": \"Moyen (2-3m)\", \"coef_rendement\": 0.75}, \"difficile\": {\"libelle\": \"Difficile (-2m)\", \"coef_rendement\": 0.5}}, \"_note_acces\": \"coef_rendement multiplie le rendement de l'engin. Acces difficile = 2x plus lent = 2x plus cher en MO.\", \"evacuation\": {\"capacite_camion_m3\": 8, \"cout_rotation_base\": 60, \"cout_rotation_par_km\": 1.8, \"tarif_decharge_Ttonne\": {\"inerte\": 18, \"terre\": 12, \"melange\": 25, \"pollue\": 90}}, \"_note_evacuation\": \"rotations = ceil(volume_foisonne / capacite_camion). cout transport = rotations x (cout_rotation_base + dist_km x cout_rotation_par_km). cout decharge = tonnage x tarif_decharge selon nature. Mets a jour avec les tarifs reels de TES decharges/ISDI.\", \"transfert\": {\"forfait_base\": 75, \"cout_par_km\": 3.0}, \"_note_transfert\": \"Amenee/repli engin. cout = forfait_base + dist_km x cout_par_km (aller-retour deja integre dans le coef).\", \"fournitures\": {\"tout_venant_0_31_5\": {\"libelle\": \"Tout-venant 0/31.5\", \"unite\": \"T\", \"prix_unitaire\": 16, \"densite_Tm3\": 1.9, \"norme\": \"NF EN 13242\", \"prix_a_confirmer\": true}, \"grave_0_20\": {\"libelle\": \"Grave 0/20\", \"unite\": \"T\", \"prix_unitaire\": 19, \"densite_Tm3\": 1.9, \"norme\": \"NF EN 13242\", \"prix_a_confirmer\": true}, \"sable_0_4\": {\"libelle\": \"Sable 0/4\", \"unite\": \"T\", \"prix_unitaire\": 22, \"densite_Tm3\": 1.6, \"norme\": \"NF EN 13139\", \"prix_a_confirmer\": true}, \"geotextile_140\": {\"libelle\": \"Geotextile 140g/m2\", \"unite\": \"m2\", \"prix_unitaire\": 2.5, \"norme\": \"NF EN ISO 10319\"}, \"bordurette_T1\": {\"libelle\": \"Bordurette beton T1\", \"unite\": \"ml\", \"prix_unitaire\": 14, \"norme\": \"NF EN 1340\"}, \"drain_100\": {\"libelle\": \"Drain agricole D100\", \"unite\": \"ml\", \"prix_unitaire\": 3.5}, \"cage_gabion\": {\"libelle\": \"Cage gabion 1x1x1\", \"unite\": \"U\", \"prix_unitaire\": 38, \"volume_m3\": 1, \"prix_a_confirmer\": true}, \"pierre_gabion\": {\"libelle\": \"Pierre remplissage gabion 80/200\", \"unite\": \"T\", \"prix_unitaire\": 32, \"densite_Tm3\": 1.6, \"prix_a_confirmer\": true}, \"bloc_enrochement\": {\"libelle\": \"Bloc d'enrochement\", \"unite\": \"T\", \"prix_unitaire\": 35, \"densite_Tm3\": 1.6, \"prix_a_confirmer\": true}, \"paroi_berlinoise\": {\"libelle\": \"Paroi berlinoise (profiles + blindage)\", \"unite\": \"m2\", \"prix_unitaire\": 160, \"prix_a_confirmer\": true}, \"gaine_tpc_63\": {\"libelle\": \"Gaine TPC rouge D63 (electricite)\", \"unite\": \"ml\", \"prix_unitaire\": 2.2, \"prix_a_confirmer\": true}, \"pehd_32\": {\"libelle\": \"Tube PEHD D32 (eau potable)\", \"unite\": \"ml\", \"prix_unitaire\": 1.9, \"prix_a_confirmer\": true}, \"gaine_telecom_42\": {\"libelle\": \"Fourreau telecom D42 vert\", \"unite\": \"ml\", \"prix_unitaire\": 1.6, \"prix_a_confirmer\": true}, \"pvc_cr8_125\": {\"libelle\": \"Tuyau PVC CR8 D125 (assainissement)\", \"unite\": \"ml\", \"prix_unitaire\": 9.5, \"prix_a_confirmer\": true}, \"grillage_avertisseur\": {\"libelle\": \"Grillage avertisseur\", \"unite\": \"ml\", \"prix_unitaire\": 0.5, \"prix_a_confirmer\": false}}, \"_note_fournitures\": \"prix_unitaire = prix RENDU CHANTIER (transport carriere inclus). Pour les materiaux en T, densite_Tm3 sert a convertir un volume (m3) en tonnage a commander.\", \"postes_par_type\": {\"Acces garage / entree\": [\"transfert\", \"decaissage\", \"geotextile\", \"grave\", \"compactage\"], \"Terrassement general\": [\"transfert\", \"decaissage\", \"evacuation\", \"regalage\"], \"Creation de mare\": [\"transfert\", \"decaissage\", \"evacuation\", \"geotextile\"], \"Drainage / VRD\": [\"transfert\", \"tranchee\", \"drain\", \"enrobage_gravier\", \"remblai_tranchee\"], \"Nivellement terrain\": [\"transfert\", \"decapage\", \"regalage\", \"compactage\"], \"Tranchee reseaux\": [\"transfert\", \"tranchee\", \"lit_sable\", \"conduit\", \"grillage\", \"remblai_tranchee\"], \"Assainissement\": [\"transfert\", \"tranchee\", \"lit_sable\", \"conduit\", \"grillage\", \"remblai_tranchee\"], \"Plateforme / parking\": [\"transfert\", \"decaissage\", \"evacuation\", \"geotextile\", \"tout_venant\", \"compactage\"], \"Mur de soutenement gabion\": [\"transfert\", \"gabion_assise\", \"gabion_cages\", \"gabion_pierre\", \"gabion_montage\", \"gabion_geotextile\"], \"Enrochement\": [\"transfert\", \"gabion_assise\", \"enroch_blocs\", \"enroch_pose\", \"gabion_geotextile\"], \"Paroi berlinoise\": [\"transfert\", \"berlinoise_paroi\", \"berlinoise_pose\"]}, \"_note_postes\": \"Pour chaque type de chantier, liste des postes a generer par defaut. C'est ce que l'IA peut ajuster selon la description/photo, mais le calcul de chaque poste reste deterministe.\", \"main_oeuvre\": {\"rendement_grave_Th\": 10, \"_note\": \"rendement_grave_Th = tonnes de grave mises en oeuvre + compactees par heure. Sert a chiffrer la MO de mise en oeuvre des fournitures.\", \"rendement_gabion_m3h\": 0.6, \"_note_gabion\": \"rendement_gabion_m3h = m3 de mur gabion montes + remplis par heure (~0.6 = environ 1h40/m3).\", \"rendement_enroch_m3h\": 5, \"rendement_berlinoise_m2h\": 1.5, \"rendement_conduit_mlh\": 35, \"rendement_remblai_m3h\": 10}, \"_note_prix_a_confirmer\": \"prix_a_confirmer:true -> le poste est marque provisoire, le devis passe en attente, une demande de prix fournisseur est generee. Passe a false (ou enregistrePrixRecu) une fois le prix confirme.\", \"mode_prix_materiaux\": \"depart_carriere\", \"_note_mode_prix\": \"'depart_carriere' = prix matiere SANS transport + ligne livraison calculee a part (recommande : prix matiere reutilisable partout). 'rendu_chantier' = transport inclus dans le prix unitaire (simple mais valable seulement a distance equivalente).\", \"livraison\": {\"cout_Tkm\": 0.18, \"forfait_mini\": 45, \"_note\": \"Livraison granulats. cout = max(forfait_mini, tonnage x distance_carriere_km x cout_Tkm). Ajuste cout_Tkm avec ton vrai cout de transport benne/camion par tonne et par km.\"}, \"coef_fourniture\": 1.56, \"_note_coef_fourniture\": \"Coefficient applique au prix matiere HT pour couvrir la TVA non recuperee (micro, achat TTC) ET les charges sur le CA. 1.50 = x1.20 (TVA) / 0.80 (charges 20% CA). Ajuste selon ton vrai taux de charges. Mettre 1 pour vendre a prix coutant.\", \"gabion\": {\"hauteur_defaut\": 1, \"epaisseur_defaut\": 0.5, \"_note\": \"Mur gabion : longueur = champ 'surface', hauteur = champ 'profondeur' (sinon defaut), epaisseur = epaisseur_defaut. Volume = longueur x hauteur x epaisseur.\", \"assise_ep\": 0.1}, \"reseaux\": {\"electricite\": {\"fourniture\": \"gaine_tpc_63\", \"prof\": 0.65, \"libelle\": \"Electricite (TPC rouge)\"}, \"eau\": {\"fourniture\": \"pehd_32\", \"prof\": 1.0, \"libelle\": \"Eau potable (PEHD)\"}, \"telecom\": {\"fourniture\": \"gaine_telecom_42\", \"prof\": 0.6, \"libelle\": \"Telecom (fourreau vert)\"}, \"assainissement\": {\"fourniture\": \"pvc_cr8_125\", \"prof\": 0.8, \"libelle\": \"Assainissement (PVC CR8)\"}, \"_note\": \"prof = profondeur normative indicative (hors gel / sous voirie a adapter).\"}, \"remuneration\": {\"net_jour\": 400, \"heures_jour\": 7, \"taux_urssaf\": 23, \"_note\": \"Objectif net/jour (pelle + carburant inclus). Tarif horaire calcule = net_jour / (heures_jour x (1 - taux/100)). Le coef fournitures est recale sur le meme taux : 1.20 (TVA non recuperee) / (1 - taux/100).\"}}";
 async function chargerBareme() {
   if (BAREME) return BAREME;
   // 1. cloud (proxy)
@@ -951,6 +1196,7 @@ window.addEventListener('load', function() {
       chargerHistoriquePrix();
       chargerBareme();
       loadChantiers();
+      var av = document.getElementById('app-version'); if (av) av.textContent = APP_VERSION;
     }, 500);
   }, 1400);
 });
@@ -1030,8 +1276,11 @@ async function rechercherCarrieres() {
 
 // ── GENERATION DEVIS ──
 // Choisit les postes selon le type de chantier + le menu evacuation
+var TYPES_SOUTENEMENT = ['Mur de soutenement gabion','Enrochement','Paroi berlinoise'];
 function postesSelonEvac(B, type, evac) {
   var codes = (B.postes_par_type[type] || ["transfert", "decaissage", "evacuation"]).slice();
+  // Les ouvrages de soutenement ne sont pas concernes par le menu evacuation
+  if (TYPES_SOUTENEMENT.indexOf(type) !== -1) return codes;
   var e = (evac || '').toLowerCase();
   if (e.indexOf('regalage') !== -1 || e.indexOf('place') !== -1) {
     codes = codes.filter(function(c){ return c !== 'evacuation'; });
@@ -1042,6 +1291,53 @@ function postesSelonEvac(B, type, evac) {
   return codes;
 }
 
+// Adapte le formulaire selon le type (ouvrages de soutenement = longueur/hauteur, reseaux = ml/prof)
+var TYPES_RESEAU = ['Tranchee reseaux','Assainissement','Drainage / VRD'];
+function majChampsType() {
+  var t = document.getElementById('tt').value;
+  var mur = (t === 'Mur de soutenement gabion' || t === 'Enrochement' || t === 'Paroi berlinoise');
+  var avecEp = (t === 'Mur de soutenement gabion' || t === 'Enrochement');
+  var reseau = TYPES_RESEAU.indexOf(t) !== -1;
+  document.getElementById('fg-epgab').style.display = avecEp ? '' : 'none';
+  document.getElementById('fg-fouille').style.display = mur ? '' : 'none';
+  document.getElementById('fg-fouille2').style.display = mur ? '' : 'none';
+  document.getElementById('fg-reseau').style.display = (t === 'Tranchee reseaux') ? '' : 'none';
+  document.getElementById('fg-trlarg').style.display = reseau ? '' : 'none';
+  document.getElementById('lbl-su').textContent = mur ? 'Longueur mur (ml)' : (reseau ? 'Longueur tranchee (ml)' : 'Surface (m2)');
+  document.getElementById('lbl-pr2').textContent = mur ? 'Hauteur mur (m)' : (reseau ? 'Profondeur tranchee (m)' : 'Profondeur (m)');
+}
+
+// Prompt de rendu IA adapte a chaque type d'ouvrage
+function fluxPromptPour(type, sol) {
+  var rendus = {
+    'Mur de soutenement gabion': 'a finished gabion retaining wall: stacked galvanized steel wire mesh cages neatly filled with grey angular stones, clean straight rows',
+    'Enrochement': 'a finished rock riprap retaining wall made of large natural boulders carefully stacked and interlocked, natural stone colors',
+    'Paroi berlinoise': 'a finished berlin-style retaining wall with vertical steel H-beams and horizontal timber lagging panels between them',
+    'Acces garage / entree': 'a finished compacted gravel driveway with clean straight edges, light grey crushed stone, smooth even surface',
+    'Plateforme / parking': 'a finished flat compacted gravel platform, light grey crushed stone, perfectly level professional surface',
+    'Creation de mare': 'a finished small natural garden pond with calm water and soft natural earth banks',
+    'Terrassement general': 'freshly graded flat bare earth terrain, professionally leveled, clean finish',
+    'Nivellement terrain': 'freshly graded flat bare earth terrain, professionally leveled, smooth even surface',
+    'Tranchee reseaux': 'a neatly backfilled and compacted utility trench line, a clean strip of fresh soil across the ground',
+    'Assainissement': 'a neatly backfilled and compacted sewer trench line, a clean strip of fresh soil across the ground',
+    'Drainage / VRD': 'a neatly backfilled drainage trench line with a thin visible gravel strip along its path'
+  };
+  var rendu = rendus[type] || (type + ' finished, compacted ' + sol + ', flat professional TP surface');
+  return 'PRESERVE buildings, walls, vehicles, trees, sky and all surroundings exactly as they are. '
+    + 'REPLACE ONLY the marked ground area with: ' + rendu
+    + '. Same camera angle, same lighting and shadows, seamless integration with the existing photo, photorealistic, no people, no text.';
+}
+
+
+// Tarif horaire deduit de l'objectif de remuneration (net/jour apres URSSAF)
+function tarifHoraireCalcule(B) {
+  var r = B && B.remuneration;
+  if (!r || !r.net_jour || !r.heures_jour) return 0;
+  var taux = (r.taux_urssaf || 0) / 100;
+  if (taux >= 1) return 0;
+  return Math.round(r.net_jour / (r.heures_jour * (1 - taux)) * 100) / 100;
+}
+
 async function genererDevis() {
   var btn = document.getElementById('bg'); btn.disabled = true;
   showL('Analyse du chantier...');
@@ -1049,7 +1345,7 @@ async function genererDevis() {
     const B = await chargerBareme();
     synchroniserBareme(B);
 
-    var tarif = parseFloat(cfg.tarif) || 75;
+    var tarif = tarifHoraireCalcule(B) || parseFloat(cfg.tarif) || 75;
     var dist  = (chantierLat && chantierLng) ? parseFloat(distKm(BASE_LAT, BASE_LNG, chantierLat, chantierLng).toFixed(1)) : 15;
     var chantier = {
       type: document.getElementById('tt').value, sol: document.getElementById('ts').value,
@@ -1059,11 +1355,44 @@ async function genererDevis() {
       desc: document.getElementById('de').value,
       client: document.getElementById('nc').value || 'Client',
       ville: document.getElementById('vc').value || 'Gresivaudan',
-      tarif: tarif, dist_km: dist, nature_terre: 'terre'
+      tarif: tarif, dist_km: dist, nature_terre: 'terre',
+      epaisseur_gabion: parseFloat((document.getElementById('ep-gabion')||{}).value) || 0,
+      largeur_fouille: parseFloat((document.getElementById('fo-larg')||{}).value) || 0,
+      prof_fouille: parseFloat((document.getElementById('fo-prof')||{}).value) || 0,
+      largeur_tranchee: parseFloat((document.getElementById('tr-larg')||{}).value) || 0.4
     };
+    // Reseaux : la saisie est en metres lineaires + type de conduite
+    if (TYPES_RESEAU.indexOf(chantier.type) !== -1) {
+      chantier.ml = chantier.surf;
+      chantier.reseau = (chantier.type === 'Assainissement') ? 'assainissement'
+        : (chantier.type === 'Tranchee reseaux') ? (document.getElementById('rt')||{}).value || 'electricite' : '';
+    }
+
+    // Validation des saisies avant tout calcul
+    var estMur = TYPES_SOUTENEMENT.indexOf(chantier.type) !== -1;
+    var erreurs = [];
+    var estReseau = TYPES_RESEAU.indexOf(chantier.type) !== -1;
+    if (!chantier.surf || chantier.surf <= 0) erreurs.push(estMur ? 'la longueur du mur' : (estReseau ? 'la longueur de tranchee' : 'la surface'));
+    if (!chantier.prof || chantier.prof <= 0) erreurs.push(estMur ? 'la hauteur du mur' : 'la profondeur');
+    if (erreurs.length) {
+      hideL(); btn.disabled = false;
+      if (window.showT) showT('Renseigne ' + erreurs.join(' et ') + ' avant de generer');
+      else alert('Renseigne ' + erreurs.join(' et ') + ' avant de generer');
+      return;
+    }
 
     // Postes selon le type + le menu evacuation
     var postesCodes = postesSelonEvac(B, chantier.type, chantier.evac);
+
+    // Soutenement avec fouille renseignee : terrassement + devenir des terres selon le menu evacuation
+    if (estMur && chantier.largeur_fouille > 0 && chantier.prof_fouille > 0) {
+      var ev = (chantier.evac || '').toLowerCase();
+      var apres = postesCodes.indexOf('transfert') + 1;
+      postesCodes.splice(apres, 0, 'fouille');
+      if (ev.indexOf('regalage') !== -1 || ev.indexOf('place') !== -1) postesCodes.splice(apres + 1, 0, 'fouille_regalage');
+      else if (ev.indexOf('client') === -1) postesCodes.splice(apres + 1, 0, 'fouille_evac');
+      // "a charge client" -> fouille seule, pas de gestion des terres
+    }
     var contraintes = [];
 
     // IA #1 : interpretation photo + description (aucun prix)
@@ -1101,11 +1430,14 @@ async function genererDevis() {
     devis._date = new Date().toLocaleDateString('fr-FR');
     devis._type = chantier.type; devis._client = chantier.client; devis._ville = chantier.ville;
     devis._photo = photo; devis._id = Date.now();
-    devis.flux_prompt = 'PRESERVE buildings/walls/vehicles/trees/sky. REPLACE ONLY ground with: ' + chantier.type + ' finished, compacted ' + chantier.sol + ', flat professional TP surface, same photo angle and lighting, photorealistic, no people';
+    devis.flux_prompt = fluxPromptPour(chantier.type, chantier.sol);
 
     if (devis.statut === 'en_attente_prix') {
       // Des prix fournisseurs sont a confirmer -> onglet Prix
       cur = devis;
+      if (hist.indexOf(devis) === -1) hist.unshift(devis);
+      updateHC();
+      fetch(PROXY + '/api/devis/save', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(devis) }).catch(function(){});
       await ouvrirOngletPrix(devis, chantier, postesCodes, {});
     } else {
       hideL();
@@ -1757,6 +2089,13 @@ function _txt(id,val){return '<input id="'+id+'" type="text" value="'+(val||'')+
 function _row(label,h){return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span style="flex:1;font-size:13px;color:#cdd3cd">'+label+'</span>'+h+'</div>';}
 function renderBareme(){
   var B=BAREME,h='';
+  var tCalc=tarifHoraireCalcule(B), r=B.remuneration||{};
+  h+='<div class="card" style="border-color:rgba(90,158,93,.4)"><div class="ct">Ta remuneration (objectif net)</div>'
+    +_row('Objectif net / jour (EUR)',_inp('rem-net',r.net_jour||400,'10'))
+    +_row('Heures facturees / jour',_inp('rem-h',r.heures_jour||7,'0.5'))
+    +_row('Taux URSSAF (% du CA)',_inp('rem-taux',r.taux_urssaf||23,'0.1'))
+    +(tCalc?'<div style="font-size:12.5px;color:var(--gl);margin-top:6px;padding:8px;background:rgba(44,95,46,.15);border-radius:8px">Tarif horaire applique aux devis : <b>'+tCalc+' EUR/h</b><br><span style="color:var(--g4)">soit '+Math.round(tCalc*(r.heures_jour||7))+' EUR factures/jour &rarr; '+(r.net_jour||400)+' EUR net apres URSSAF. Coef fournitures recale : x'+(B.coef_fourniture||1)+'</span></div>':'')
+    +'</div>';
   h+='<div class="card"><div class="ct">Fournitures (prix unitaire)</div>';
   Object.keys(B.fournitures).forEach(function(code){var f=B.fournitures[code];var src=f._source?'<div style="font-size:11px;color:var(--g4)">appris : '+f._source+'</div>':'';
     h+='<div style="border-bottom:1px solid rgba(255,255,255,.06);padding:8px 0"><div style="display:flex;gap:8px;align-items:center;margin-bottom:6px">'+_txt('bf-lib-'+code,f.libelle)+'</div><div style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:#cdd3cd">Prix '+_inp('bf-prix-'+code,f.prix_unitaire)+' EUR/'+(f.unite||'U')+(f.densite_Tm3!=null?' &middot; densite '+_inp('bf-dens-'+code,f.densite_Tm3,'0.01')+' T/m3':'')+'</div><label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--g4);margin-top:5px"><input type="checkbox" id="bf-conf-'+code+'"'+(f.prix_a_confirmer?' checked':'')+'> a confirmer</label>'+src+'</div>';});
@@ -1764,20 +2103,41 @@ function renderBareme(){
   h+='<div class="card"><div class="ct">Sols (foisonnement / densite / rendement 2T5)</div>';
   Object.keys(B.sols).forEach(function(s){var sol=B.sols[s];h+='<div style="border-bottom:1px solid rgba(255,255,255,.06);padding:8px 0"><div style="font-size:13px;font-weight:600;color:#5a9e5d;margin-bottom:6px">'+sol.libelle+'</div><div style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:#cdd3cd">foisonnt '+_inp('bs-foi-'+s,sol.foisonnement,'0.01')+' &middot; densite '+_inp('bs-den-'+s,sol.densite_Tm3,'0.01')+' &middot; rdt '+_inp('bs-rdt-'+s,sol.rendement_2t5_m3h,'0.5')+' m3/h</div></div>';});
   h+='</div>';
-  h+='<div class="card"><div class="ct">Livraison &amp; transport</div>'+_row('Mode prix matiere','<select id="bm-mode" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:7px;padding:6px;color:var(--w);font-size:13px"><option value="depart_carriere"'+(B.mode_prix_materiaux==='depart_carriere'?' selected':'')+'>Depart carriere</option><option value="rendu_chantier"'+(B.mode_prix_materiaux==='rendu_chantier'?' selected':'')+'>Rendu chantier</option></select>')+_row('Marge fournitures (x prix HT)',_inp('bcoef',B.coef_fourniture||1,'0.01'))+_row('Livraison (EUR/T/km)',_inp('bl-tkm',B.livraison.cout_Tkm,'0.01'))+_row('Forfait mini livraison',_inp('bl-min',B.livraison.forfait_mini,'1'))+_row('Transfert engin (forfait)',_inp('bt-base',B.transfert.forfait_base,'1'))+_row('Transfert (EUR/km)',_inp('bt-km',B.transfert.cout_par_km,'0.1'))+'</div>';
+  h+='<div class="card"><div class="ct">Livraison &amp; transport</div>'+_row('Mode prix matiere','<select id="bm-mode" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:7px;padding:6px;color:var(--w);font-size:13px"><option value="depart_carriere"'+(B.mode_prix_materiaux==='depart_carriere'?' selected':'')+'>Depart carriere</option><option value="rendu_chantier"'+(B.mode_prix_materiaux==='rendu_chantier'?' selected':'')+'>Rendu chantier</option></select>')+_row('Livraison (EUR/T/km)',_inp('bl-tkm',B.livraison.cout_Tkm,'0.01'))+_row('Forfait mini livraison',_inp('bl-min',B.livraison.forfait_mini,'1'))+_row('Transfert engin (forfait)',_inp('bt-base',B.transfert.forfait_base,'1'))+_row('Transfert (EUR/km)',_inp('bt-km',B.transfert.cout_par_km,'0.1'))+'</div>';
   h+='<div class="card"><div class="ct">Evacuation</div>'+_row('Capacite camion (m3)',_inp('be-cap',B.evacuation.capacite_camion_m3,'0.5'))+_row('Rotation (forfait)',_inp('be-rot',B.evacuation.cout_rotation_base,'1'))+_row('Rotation (EUR/km)',_inp('be-km',B.evacuation.cout_rotation_par_km,'0.1'));
   Object.keys(B.evacuation.tarif_decharge_Ttonne).forEach(function(t){h+=_row('Decharge '+t+' (EUR/T)',_inp('be-dec-'+t,B.evacuation.tarif_decharge_Ttonne[t],'1'));});
   h+=_row('Rendt pose grave (T/h)',_inp('bmo-grave',B.main_oeuvre.rendement_grave_Th,'0.5'))+'</div>';
+  h+='<div class="card"><div class="ct">Ouvrages de soutenement</div>'
+    +_row('Rendt gabion (m3/h)',_inp('bmo-gab',B.main_oeuvre.rendement_gabion_m3h||0.6,'0.1'))
+    +_row('Rendt enrochement (m3/h)',_inp('bmo-enr',B.main_oeuvre.rendement_enroch_m3h||5,'0.5'))
+    +_row('Rendt berlinoise (m2/h)',_inp('bmo-ber',B.main_oeuvre.rendement_berlinoise_m2h||1.5,'0.1'))
+    +_row('Gabion : epaisseur defaut (m)',_inp('bg-ep',(B.gabion&&B.gabion.epaisseur_defaut)||0.5,'0.1'))
+    +_row('Gabion : hauteur defaut (m)',_inp('bg-h',(B.gabion&&B.gabion.hauteur_defaut)||1,'0.1'))
+    +_row('Assise : epaisseur (m)',_inp('bg-assise',(B.gabion&&B.gabion.assise_ep)||0.1,'0.05'))
+    +'</div>';
   h+='<button class="btn" style="width:100%;background:var(--gl);color:var(--gd);font-weight:700;border:none;padding:13px;border-radius:10px;margin-top:6px" onclick="enregistrerBareme()">Enregistrer le barème</button>';
   document.getElementById('bareme-contenu').innerHTML=h;
 }
 function ajouterFourniture(){var code=prompt('Code interne (sans espace, ex: gnt_0_80)');if(!code)return;code=code.trim().replace(/[^a-z0-9_]/gi,'_').toLowerCase();if(BAREME.fournitures[code]){alert('Ce code existe deja');return;}BAREME.fournitures[code]={libelle:'Nouveau materiau',unite:'T',prix_unitaire:0,densite_Tm3:1.8,prix_a_confirmer:true};renderBareme();}
 function enregistrerBareme(){var B=BAREME;
+  if(!B.remuneration)B.remuneration={};
+  B.remuneration.net_jour=parseFloat(document.getElementById('rem-net').value)||400;
+  B.remuneration.heures_jour=parseFloat(document.getElementById('rem-h').value)||7;
+  B.remuneration.taux_urssaf=parseFloat(document.getElementById('rem-taux').value)||23;
+  // Coef fournitures recale sur le taux : TVA non recuperee (x1.20) / (1 - taux URSSAF)
+  B.coef_fourniture=Math.round(1.20/(1-B.remuneration.taux_urssaf/100)*100)/100;
   Object.keys(B.fournitures).forEach(function(code){var f=B.fournitures[code];var lib=document.getElementById('bf-lib-'+code);if(lib)f.libelle=lib.value;var p=document.getElementById('bf-prix-'+code);if(p)f.prix_unitaire=parseFloat(p.value)||0;var dn=document.getElementById('bf-dens-'+code);if(dn)f.densite_Tm3=parseFloat(dn.value)||f.densite_Tm3;var cf=document.getElementById('bf-conf-'+code);if(cf)f.prix_a_confirmer=cf.checked;});
   Object.keys(B.sols).forEach(function(s){B.sols[s].foisonnement=parseFloat(document.getElementById('bs-foi-'+s).value)||B.sols[s].foisonnement;B.sols[s].densite_Tm3=parseFloat(document.getElementById('bs-den-'+s).value)||B.sols[s].densite_Tm3;B.sols[s].rendement_2t5_m3h=parseFloat(document.getElementById('bs-rdt-'+s).value)||B.sols[s].rendement_2t5_m3h;});
-  B.mode_prix_materiaux=document.getElementById('bm-mode').value;B.coef_fourniture=parseFloat(document.getElementById('bcoef').value)||1;B.livraison.cout_Tkm=parseFloat(document.getElementById('bl-tkm').value)||B.livraison.cout_Tkm;B.livraison.forfait_mini=parseFloat(document.getElementById('bl-min').value)||0;B.transfert.forfait_base=parseFloat(document.getElementById('bt-base').value)||B.transfert.forfait_base;B.transfert.cout_par_km=parseFloat(document.getElementById('bt-km').value)||B.transfert.cout_par_km;B.evacuation.capacite_camion_m3=parseFloat(document.getElementById('be-cap').value)||B.evacuation.capacite_camion_m3;B.evacuation.cout_rotation_base=parseFloat(document.getElementById('be-rot').value)||B.evacuation.cout_rotation_base;B.evacuation.cout_rotation_par_km=parseFloat(document.getElementById('be-km').value)||B.evacuation.cout_rotation_par_km;
+  B.mode_prix_materiaux=document.getElementById('bm-mode').value;B.livraison.cout_Tkm=parseFloat(document.getElementById('bl-tkm').value)||B.livraison.cout_Tkm;B.livraison.forfait_mini=parseFloat(document.getElementById('bl-min').value)||0;B.transfert.forfait_base=parseFloat(document.getElementById('bt-base').value)||B.transfert.forfait_base;B.transfert.cout_par_km=parseFloat(document.getElementById('bt-km').value)||B.transfert.cout_par_km;B.evacuation.capacite_camion_m3=parseFloat(document.getElementById('be-cap').value)||B.evacuation.capacite_camion_m3;B.evacuation.cout_rotation_base=parseFloat(document.getElementById('be-rot').value)||B.evacuation.cout_rotation_base;B.evacuation.cout_rotation_par_km=parseFloat(document.getElementById('be-km').value)||B.evacuation.cout_rotation_par_km;
   Object.keys(B.evacuation.tarif_decharge_Ttonne).forEach(function(t){B.evacuation.tarif_decharge_Ttonne[t]=parseFloat(document.getElementById('be-dec-'+t).value)||0;});
   B.main_oeuvre.rendement_grave_Th=parseFloat(document.getElementById('bmo-grave').value)||B.main_oeuvre.rendement_grave_Th;
+  B.main_oeuvre.rendement_gabion_m3h=parseFloat(document.getElementById('bmo-gab').value)||B.main_oeuvre.rendement_gabion_m3h||0.6;
+  B.main_oeuvre.rendement_enroch_m3h=parseFloat(document.getElementById('bmo-enr').value)||B.main_oeuvre.rendement_enroch_m3h||5;
+  B.main_oeuvre.rendement_berlinoise_m2h=parseFloat(document.getElementById('bmo-ber').value)||B.main_oeuvre.rendement_berlinoise_m2h||1.5;
+  if(!B.gabion)B.gabion={};
+  B.gabion.epaisseur_defaut=parseFloat(document.getElementById('bg-ep').value)||0.5;
+  B.gabion.hauteur_defaut=parseFloat(document.getElementById('bg-h').value)||1;
+  B.gabion.assise_ep=parseFloat(document.getElementById('bg-assise').value)||0.1;
   sauvegarderBareme();if(window.showT)showT('Barème enregistre');else alert('Barème enregistre');
 }
 
