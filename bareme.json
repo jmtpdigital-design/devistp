@@ -107,6 +107,63 @@
       "libelle": "Drain agricole D100",
       "unite": "ml",
       "prix_unitaire": 3.5
+    },
+    "cage_gabion": {
+      "libelle": "Cage gabion 1x1x1",
+      "unite": "U",
+      "prix_unitaire": 38,
+      "volume_m3": 1,
+      "prix_a_confirmer": true
+    },
+    "pierre_gabion": {
+      "libelle": "Pierre remplissage gabion 80/200",
+      "unite": "T",
+      "prix_unitaire": 32,
+      "densite_Tm3": 1.6,
+      "prix_a_confirmer": true
+    },
+    "bloc_enrochement": {
+      "libelle": "Bloc d'enrochement",
+      "unite": "T",
+      "prix_unitaire": 35,
+      "densite_Tm3": 1.6,
+      "prix_a_confirmer": true
+    },
+    "paroi_berlinoise": {
+      "libelle": "Paroi berlinoise (profiles + blindage)",
+      "unite": "m2",
+      "prix_unitaire": 160,
+      "prix_a_confirmer": true
+    },
+    "gaine_tpc_63": {
+      "libelle": "Gaine TPC rouge D63 (electricite)",
+      "unite": "ml",
+      "prix_unitaire": 2.2,
+      "prix_a_confirmer": true
+    },
+    "pehd_32": {
+      "libelle": "Tube PEHD D32 (eau potable)",
+      "unite": "ml",
+      "prix_unitaire": 1.9,
+      "prix_a_confirmer": true
+    },
+    "gaine_telecom_42": {
+      "libelle": "Fourreau telecom D42 vert",
+      "unite": "ml",
+      "prix_unitaire": 1.6,
+      "prix_a_confirmer": true
+    },
+    "pvc_cr8_125": {
+      "libelle": "Tuyau PVC CR8 D125 (assainissement)",
+      "unite": "ml",
+      "prix_unitaire": 9.5,
+      "prix_a_confirmer": true
+    },
+    "grillage_avertisseur": {
+      "libelle": "Grillage avertisseur",
+      "unite": "ml",
+      "prix_unitaire": 0.5,
+      "prix_a_confirmer": false
     }
   },
   "_note_fournitures": "prix_unitaire = prix RENDU CHANTIER (transport carriere inclus). Pour les materiaux en T, densite_Tm3 sert a convertir un volume (m3) en tonnage a commander.",
@@ -134,8 +191,8 @@
       "transfert",
       "tranchee",
       "drain",
-      "grave",
-      "remblai"
+      "enrobage_gravier",
+      "remblai_tranchee"
     ],
     "Nivellement terrain": [
       "transfert",
@@ -146,15 +203,18 @@
     "Tranchee reseaux": [
       "transfert",
       "tranchee",
-      "sable",
-      "remblai"
+      "lit_sable",
+      "conduit",
+      "grillage",
+      "remblai_tranchee"
     ],
     "Assainissement": [
       "transfert",
       "tranchee",
-      "evacuation",
-      "sable",
-      "remblai"
+      "lit_sable",
+      "conduit",
+      "grillage",
+      "remblai_tranchee"
     ],
     "Plateforme / parking": [
       "transfert",
@@ -163,12 +223,38 @@
       "geotextile",
       "tout_venant",
       "compactage"
+    ],
+    "Mur de soutenement gabion": [
+      "transfert",
+      "gabion_assise",
+      "gabion_cages",
+      "gabion_pierre",
+      "gabion_montage",
+      "gabion_geotextile"
+    ],
+    "Enrochement": [
+      "transfert",
+      "gabion_assise",
+      "enroch_blocs",
+      "enroch_pose",
+      "gabion_geotextile"
+    ],
+    "Paroi berlinoise": [
+      "transfert",
+      "berlinoise_paroi",
+      "berlinoise_pose"
     ]
   },
   "_note_postes": "Pour chaque type de chantier, liste des postes a generer par defaut. C'est ce que l'IA peut ajuster selon la description/photo, mais le calcul de chaque poste reste deterministe.",
   "main_oeuvre": {
     "rendement_grave_Th": 10,
-    "_note": "rendement_grave_Th = tonnes de grave mises en oeuvre + compactees par heure. Sert a chiffrer la MO de mise en oeuvre des fournitures."
+    "_note": "rendement_grave_Th = tonnes de grave mises en oeuvre + compactees par heure. Sert a chiffrer la MO de mise en oeuvre des fournitures.",
+    "rendement_gabion_m3h": 0.6,
+    "_note_gabion": "rendement_gabion_m3h = m3 de mur gabion montes + remplis par heure (~0.6 = environ 1h40/m3).",
+    "rendement_enroch_m3h": 5,
+    "rendement_berlinoise_m2h": 1.5,
+    "rendement_conduit_mlh": 35,
+    "rendement_remblai_m3h": 10
   },
   "_note_prix_a_confirmer": "prix_a_confirmer:true -> le poste est marque provisoire, le devis passe en attente, une demande de prix fournisseur est generee. Passe a false (ou enregistrePrixRecu) une fois le prix confirme.",
   "mode_prix_materiaux": "depart_carriere",
@@ -178,6 +264,41 @@
     "forfait_mini": 45,
     "_note": "Livraison granulats. cout = max(forfait_mini, tonnage x distance_carriere_km x cout_Tkm). Ajuste cout_Tkm avec ton vrai cout de transport benne/camion par tonne et par km."
   },
-  "coef_fourniture": 1.5,
-  "_note_coef_fourniture": "Coefficient applique au prix matiere HT pour couvrir la TVA non recuperee (micro, achat TTC) ET les charges sur le CA. 1.50 = x1.20 (TVA) / 0.80 (charges 20% CA). Ajuste selon ton vrai taux de charges. Mettre 1 pour vendre a prix coutant."
+  "coef_fourniture": 1.56,
+  "_note_coef_fourniture": "Coefficient applique au prix matiere HT pour couvrir la TVA non recuperee (micro, achat TTC) ET les charges sur le CA. 1.50 = x1.20 (TVA) / 0.80 (charges 20% CA). Ajuste selon ton vrai taux de charges. Mettre 1 pour vendre a prix coutant.",
+  "gabion": {
+    "hauteur_defaut": 1,
+    "epaisseur_defaut": 0.5,
+    "_note": "Mur gabion : longueur = champ 'surface', hauteur = champ 'profondeur' (sinon defaut), epaisseur = epaisseur_defaut. Volume = longueur x hauteur x epaisseur.",
+    "assise_ep": 0.1
+  },
+  "reseaux": {
+    "electricite": {
+      "fourniture": "gaine_tpc_63",
+      "prof": 0.65,
+      "libelle": "Electricite (TPC rouge)"
+    },
+    "eau": {
+      "fourniture": "pehd_32",
+      "prof": 1.0,
+      "libelle": "Eau potable (PEHD)"
+    },
+    "telecom": {
+      "fourniture": "gaine_telecom_42",
+      "prof": 0.6,
+      "libelle": "Telecom (fourreau vert)"
+    },
+    "assainissement": {
+      "fourniture": "pvc_cr8_125",
+      "prof": 0.8,
+      "libelle": "Assainissement (PVC CR8)"
+    },
+    "_note": "prof = profondeur normative indicative (hors gel / sous voirie a adapter)."
+  },
+  "remuneration": {
+    "net_jour": 400,
+    "heures_jour": 7,
+    "taux_urssaf": 23,
+    "_note": "Objectif net/jour (pelle + carburant inclus). Tarif horaire calcule = net_jour / (heures_jour x (1 - taux/100)). Le coef fournitures est recale sur le meme taux : 1.20 (TVA non recuperee) / (1 - taux/100)."
+  }
 }
