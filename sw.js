@@ -1,5 +1,5 @@
 // Incremente ce numero a CHAQUE mise a jour de l'appli pour forcer le rafraichissement
-const CACHE = 'devistp-v5';
+const CACHE = 'devistp-v6';
 const ASSETS = ['./index.html', './manifest.json'];
 
 // Installation : on precharge, et on prend la main tout de suite
