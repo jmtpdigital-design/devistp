@@ -329,7 +329,7 @@ header h1 span{color:var(--gl)}
   </div>
 </div>
 <script>
-const APP_VERSION = '3.0';
+const APP_VERSION = '3.1';
 const PROXY = 'https://devistp-proxy.onrender.com';
 const BASE_LAT = 45.3833, BASE_LNG = 6.1167;
 let photo = null, cur = null, hist = [], cfg = JSON.parse(localStorage.getItem('cfg') || '{}');
@@ -1171,9 +1171,9 @@ const BAREME_DEFAUT = "{\"_version\": \"1.0\", \"_note\": \"BASE DE PRIX DevisTP
 async function chargerBareme() {
   if (BAREME) return BAREME;
   // 1. cloud (proxy)
-  try { const r = await fetch(PROXY + '/api/bareme/get'); if (r.ok) { BAREME = await r.json(); persistBaremeLocal(); return BAREME; } } catch(e) {}
+  try { const r = await fetch(PROXY + '/api/bareme/get'); if (r.ok) { BAREME = fusionnerBareme(await r.json()); persistBaremeLocal(); return BAREME; } } catch(e) {}
   // 2. modifications locales
-  try { const s = localStorage.getItem('devistp_bareme'); if (s) { BAREME = JSON.parse(s); return BAREME; } } catch(e) {}
+  try { const s = localStorage.getItem('devistp_bareme'); if (s) { BAREME = fusionnerBareme(JSON.parse(s)); persistBaremeLocal(); return BAREME; } } catch(e) {}
   // 3. fichier bareme.json (si deploye)
   try { BAREME = await (await fetch('bareme.json')).json(); return BAREME; } catch(e) {}
   // 4. secours : barème embarque (l'appli marche toujours)
@@ -1181,6 +1181,25 @@ async function chargerBareme() {
   return BAREME;
 }
 function persistBaremeLocal() { try { localStorage.setItem('devistp_bareme', JSON.stringify(BAREME)); } catch(e) {} }
+/* Fusionne un barème sauvegarde (ancien) avec le barème par defaut :
+   tes prix/reglages sont conserves, les nouvelles cles (fournitures,
+   types, sections) sont ajoutees si absentes. Evite qu'un barème
+   enregistre avant une mise a jour casse les nouveaux ouvrages. */
+function fusionnerBareme(sauve) {
+  var def; try { def = JSON.parse(BAREME_DEFAUT); } catch(e) { return sauve; }
+  if (!sauve || typeof sauve !== 'object') return def;
+  ['fournitures','sols','acces','postes_par_type','reseaux'].forEach(function(sec){
+    if (!sauve[sec]) sauve[sec] = def[sec];
+    else if (def[sec]) Object.keys(def[sec]).forEach(function(k){ if (sauve[sec][k] === undefined) sauve[sec][k] = def[sec][k]; });
+  });
+  ['evacuation','transfert','livraison','main_oeuvre','gabion','remuneration'].forEach(function(sec){
+    if (!sauve[sec]) sauve[sec] = def[sec];
+    else if (def[sec]) Object.keys(def[sec]).forEach(function(k){ if (sauve[sec][k] === undefined) sauve[sec][k] = def[sec][k]; });
+  });
+  if (sauve.coef_fourniture === undefined) sauve.coef_fourniture = def.coef_fourniture;
+  if (sauve.mode_prix_materiaux === undefined) sauve.mode_prix_materiaux = def.mode_prix_materiaux;
+  return sauve;
+}
 function sauvegarderBareme() { persistBaremeLocal(); fetch(PROXY + '/api/bareme/save', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(BAREME) }).catch(function(){}); }
 
 // ── INIT ──
@@ -1201,7 +1220,7 @@ window.addEventListener('load', function() {
   }, 1400);
 });
 
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(function(){});
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').then(function(reg){ try{reg.update();}catch(e){} }).catch(function(){});
 
 // ── NAVIGATION ──
 function showTab(n) {
